@@ -1,0 +1,6 @@
+@SIG_DefesaCivil.API_HostAddress = http://localhost:5272
+
+GET {{SIG_DefesaCivil.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
