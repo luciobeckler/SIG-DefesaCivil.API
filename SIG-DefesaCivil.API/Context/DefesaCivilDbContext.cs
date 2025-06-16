@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using SIG_DefesaCivil.API.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace SIG_DefesaCivil.API.Context
 {
-    public class DefesaCivilDbContext : IdentityDbContext<Usuario>
+    public class DefesaCivilDbContext : IdentityDbContext<Usuario, IdentityRole, string>
     {
         public DefesaCivilDbContext(DbContextOptions<DefesaCivilDbContext> options) : base(options){}
 

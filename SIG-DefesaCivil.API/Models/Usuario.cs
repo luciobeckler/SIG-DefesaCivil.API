@@ -5,7 +5,6 @@ namespace SIG_DefesaCivil.API.Models
     public class Usuario : IdentityUser
     {
         public string Nome { get; set; }
-        public string Email { get; set; }
         public string Telefone { get; set; }
         public string  CPF { get; set; }
         public DateOnly DataAdmissao { get; set; }

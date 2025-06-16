@@ -118,4 +118,39 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
+
+    var roles = new[] { "Administrador", "Diretor", "Usuário de campo" };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+
+    var adminEmail = "admin@teste.com";
+    var admin = await userManager.FindByEmailAsync(adminEmail);
+    if (admin == null)
+    {
+        Usuario newAdmin = new Usuario
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            Nome = "Lúcio Beckler Passos",
+            Telefone = "31985211711",
+            CPF = "14485403645",
+            DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
+            isAtivo = true
+        };
+
+        var result = await userManager.CreateAsync(newAdmin, "SenhaForte123!");
+        if (result.Succeeded)
+            await userManager.AddToRoleAsync(newAdmin, "Administrador");
+    }
+}
+
 app.Run();
