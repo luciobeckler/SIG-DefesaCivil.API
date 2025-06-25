@@ -13,54 +13,12 @@ namespace SIG_DefesaCivil.API.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly UserManager<Usuario> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly  DefesaCivilDbContext _context;
         private readonly JwtTokenGenerator _jwtTokenGenerator;
 
         public AccountsController(UserManager<Usuario> userManager,RoleManager<IdentityRole> roleManager , DefesaCivilDbContext context, JwtTokenGenerator jwtTokenGenerator)
         {
             _userManager = userManager;
-            _roleManager = roleManager;
-            _context = context;
             _jwtTokenGenerator = jwtTokenGenerator;
-        }
-
-        [AllowAnonymous] //todo: permitir que apenas administradores acessem este end-point.
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDTO Register)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var emailEmUso = await _userManager.FindByEmailAsync(Register.Email);
-            if (emailEmUso != null)
-                return BadRequest("E-mail já está em uso.");
-
-            var user = new Usuario
-            {
-                UserName = Register.Email,
-                Email = Register.Email,
-                Nome = Register.Nome,
-                Telefone = Register.Telefone,
-                CPF = Register.CPF,
-                DataAdmissao = Register.DataAdmissao,
-                isAtivo = Register.IsAtivo
-            };
-
-            var result = await _userManager.CreateAsync(user, Register.Senha);
-
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            var rolesPermitidas = new[] { "Administrador", "Diretor", "Usuário de campo" };
-            if (!rolesPermitidas.Contains(Register.Cargo))
-                return BadRequest("Cargo inválido.");
-
-            if (!await _roleManager.RoleExistsAsync(Register.Cargo))
-                await _roleManager.CreateAsync(new IdentityRole(Register.Cargo));
-
-            await _userManager.AddToRoleAsync(user, Register.Cargo);
-
-            return Ok(new { message = "Usuário registrado com sucesso." });
         }
 
         [AllowAnonymous]
