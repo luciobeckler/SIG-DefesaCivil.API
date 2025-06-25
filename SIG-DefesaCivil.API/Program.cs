@@ -82,7 +82,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:4200",
+                "http://localhost:8100",
                 "URL DE PRODUÇÃO")
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -113,6 +113,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
