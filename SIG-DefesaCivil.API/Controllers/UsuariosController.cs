@@ -29,42 +29,47 @@ namespace SIG_DefesaCivil.API.Controllers
         //todo: permitir que apenas administradores acessem este end-point.
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDTO Register)
+        public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var emailEmUso = await _userManager.FindByEmailAsync(Register.Email);
+            var emailEmUso = await _userManager.FindByEmailAsync(dto.Email);
             if (emailEmUso != null)
                 return BadRequest("E-mail já está em uso.");
 
-            if (!await _roleManager.RoleExistsAsync(Register.Permissao))
+            if (!await _roleManager.RoleExistsAsync(dto.Permissao))
                 return BadRequest("Permissão inválida.");
 
             var user = new Usuario
             {
-                UserName = Register.Email,
-                Email = Register.Email,
-                Nome = Register.Nome,
-                Telefone = Register.Telefone,
-                CPF = Register.CPF,
-                DataAdmissao = Register.DataAdmissao,
-                isAtivo = Register.IsAtivo
+                UserName = dto.Email,
+                Email = dto.Email,
+                Nome = dto.Nome,
+                Telefone = dto.Telefone,
+                CPF = dto.CPF,
+                DataAdmissao = dto.DataAdmissao,
+                Cargo = dto.Cargo,
+                Endereco = dto.Endereco,
+                DataDeNascimento = dto.DataDeNascimento,
+                isAtivo = dto.IsAtivo
             };
 
-            var result = await _userManager.CreateAsync(user, Register.Senha);
+            var result = await _userManager.CreateAsync(user, dto.Senha);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            await _userManager.AddToRoleAsync(user, Register.Permissao);
+            await _userManager.AddToRoleAsync(user, dto.Permissao);
 
-            return Ok(new { message = "Usuário registrado com sucesso." });
+            return Ok(new { message = $"Usuário {user.Nome} registrado com sucesso."});
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var usuarios = await _userManager.Users
+            var usuarios = await _userManager.Users.ToListAsync();
+
+            var retorno = usuarios
                 .Select(u => new
                 {
                     u.Id,
@@ -78,10 +83,9 @@ namespace SIG_DefesaCivil.API.Controllers
                     Permissao = _userManager.GetRolesAsync(u).Result.FirstOrDefault(),
                     u.Endereco,
                     u.DataDeNascimento
-                })
-                .ToListAsync();
+                });
 
-            return Ok(usuarios);
+            return Ok(retorno);
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
@@ -145,5 +149,20 @@ namespace SIG_DefesaCivil.API.Controllers
 
             return Ok(new { message = "Usuário atualizado com sucesso." });
         }
+
+        [HttpGet("roles")]
+        public async Task<IActionResult> GetRoles()
+        {
+            var roles = await _roleManager.Roles
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Name
+                })
+                .ToListAsync();
+
+            return Ok(roles);
+        }
+
     }
 }
