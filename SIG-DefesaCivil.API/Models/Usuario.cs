@@ -8,8 +8,10 @@ namespace SIG_DefesaCivil.API.Models
         public string Telefone { get; set; }
         public string  CPF { get; set; }
         public string Cargo { get; set; }
-        public DateOnly DataAdmissao { get; set; }
-        public bool isAtivo { get; set; }
+        public bool isAtivo { get; set; } = true;
+        public bool isPrimeiroAcesso { get; set; } = true;
+        
+        public DateOnly? DataAdmissao { get; set; }
         public string? Endereco { get; set; }
         public string? DataDeNascimento { get; set; }
 

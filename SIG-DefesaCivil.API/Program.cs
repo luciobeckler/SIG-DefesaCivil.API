@@ -83,6 +83,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:8100",
+                "http://localhost:4200",
                 "URL DE PRODUÇÃO")
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -145,8 +146,10 @@ using (var scope = app.Services.CreateScope())
             Nome = "Lúcio Beckler Passos",
             Telefone = "31985211711",
             CPF = "14485403645",
+            Cargo = "Administrador do sistema",
             DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
-            isAtivo = true
+            isAtivo = true,
+            isPrimeiroAcesso = false
         };
 
         var result = await userManager.CreateAsync(newAdmin, "SenhaForte123!");
