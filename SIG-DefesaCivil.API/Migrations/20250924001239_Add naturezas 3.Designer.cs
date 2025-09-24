@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Context;
 
@@ -11,9 +12,11 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250924001239_Add naturezas 3")]
+    partial class Addnaturezas3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,7 +199,7 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("Eventos", (string)null);
+                    b.ToTable("Eventos");
                 });
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Natureza", b =>
@@ -219,7 +222,7 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasIndex("NaturezaPaiId");
 
-                    b.ToTable("Natureza", (string)null);
+                    b.ToTable("Natureza");
                 });
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Usuario", b =>

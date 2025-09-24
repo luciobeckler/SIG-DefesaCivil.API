@@ -8,6 +8,8 @@ namespace SIG_DefesaCivil.API.Context
     public class DefesaCivilDbContext : IdentityDbContext<Usuario, IdentityRole, string>
     {
         public DefesaCivilDbContext(DbContextOptions<DefesaCivilDbContext> options) : base(options){}
+        public DbSet<Natureza> Natureza { get; set; }
+        public DbSet<Evento> Eventos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

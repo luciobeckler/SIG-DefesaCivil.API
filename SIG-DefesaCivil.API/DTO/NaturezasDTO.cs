@@ -1,0 +1,17 @@
+﻿namespace SIG_DefesaCivil.API.DTOs
+{
+    public class NaturezaDto
+    {
+        public string Id { get; set; }
+        public string Nome { get; set; }
+        public string CodigoNatureza { get; set; }
+        public string? NaturezaPaiId { get; set; }
+    }
+
+    public class CreateNaturezaDto
+    {
+        public string Nome { get; set; }
+        public string CodigoNatureza { get; set; }
+        public string? NaturezaPaiId { get; set; }
+    }
+}

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Services;
 using SIG_DefesaCivil.API.TokenGenerator;
 using System.Text;
 
@@ -25,7 +26,9 @@ builder.Services.AddDbContext<DefesaCivilDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 // Registrando services
-    //Configurando características da senha
+builder.Services.AddScoped<NaturezaService>();
+
+//Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;

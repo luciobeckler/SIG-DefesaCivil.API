@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.TokenGenerator;
@@ -55,7 +54,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         [Authorize]
         [HttpPost("alterar-senha")]
-        public async Task<IActionResult> AlterarSenha([FromBody] AlterarSenhaDTO dto)
+        public async Task<IActionResult> AlterarSenha([FromBody] AccountDTO dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
