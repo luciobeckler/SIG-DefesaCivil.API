@@ -14,156 +14,166 @@ namespace SIG_DefesaCivil.API.Services
             _context = context;
         }
 
-        // Lista todas as naturezas
         public async Task<List<NaturezaDto>> GetAllAsync()
         {
-            var naturezas = await _context.Natureza
+            var todasNaturezas = await _context.Natureza
                 .Include(n => n.SubNaturezas)
                 .ToListAsync();
 
-            return naturezas.Select(n => new NaturezaDto
-            {
-                Id = n.Id,
-                Nome = n.Nome,
-                CodigoNatureza = n.CodigoNatureza,
-                NaturezaPaiId = n.NaturezaPaiId
-            }).ToList();
+            var raizes = todasNaturezas
+                .Where(n => n.NaturezaPaiId == null)
+                .OrderBy(n => n.CodigoNatureza)
+                .ToList();
+
+            return raizes.Select(n => MapToDto(n, todasNaturezas)).ToList();
         }
 
-        // Busca uma natureza pelo ID
-        public async Task<NaturezaDto?> GetByIdAsync(string id)
+        public async Task<NaturezaDto?> GetByCodigoAsync(string codigo)
         {
-            var natureza = await _context.Natureza
-                .Include(n => n.SubNaturezas)
-                .FirstOrDefaultAsync(n => n.Id == id);
-
-            if (natureza == null) return null;
-
-            return new NaturezaDto
-            {
-                Id = natureza.Id,
-                Nome = natureza.Nome,
-                CodigoNatureza = natureza.CodigoNatureza,
-                NaturezaPaiId = natureza.NaturezaPaiId
-            };
+            var natureza = await ObterNaturezaPorCodigo(codigo);
+            return natureza is null ? null : MapToDto(natureza, new List<Natureza>());
         }
 
-        // Adiciona nova natureza
         public async Task<NaturezaDto> CreateAsync(CreateNaturezaDto dto)
         {
-            if (!string.IsNullOrEmpty(dto.NaturezaPaiId))
+            await ValidarCodigoDuplicado(dto.CodigoNatureza);
+
+            string? naturezaPaiId = null;
+
+            if (!string.IsNullOrEmpty(dto.CodigoNaturezaPai))
             {
-                var pai = await _context.Natureza.FindAsync(dto.NaturezaPaiId);
-                if (pai == null)
+                var naturezaPai = await ObterNaturezaPorCodigo(dto.CodigoNaturezaPai);
+                if (naturezaPai is null)
                     throw new ArgumentException("Natureza pai não encontrada");
+
+                naturezaPaiId = naturezaPai.Id;
             }
-
-            var codigoExistente = await _context
-                .Natureza.AnyAsync(n => n.CodigoNatureza == dto.CodigoNatureza);
-
-            if (codigoExistente)
-                throw new ArgumentException("Já existe uma natureza com este código.");
 
             var natureza = new Natureza
             {
                 Id = Guid.NewGuid().ToString(),
                 Nome = dto.Nome,
                 CodigoNatureza = dto.CodigoNatureza,
-                NaturezaPaiId = string.IsNullOrEmpty(dto.NaturezaPaiId) ? null : dto.NaturezaPaiId
+                NaturezaPaiId = naturezaPaiId
             };
 
             _context.Natureza.Add(natureza);
             await _context.SaveChangesAsync();
 
-            // Retorna DTO, não a entidade (evita loop)
-            return new NaturezaDto
-            {
-                Id = natureza.Id,
-                Nome = natureza.Nome,
-                CodigoNatureza = natureza.CodigoNatureza,
-                NaturezaPaiId = natureza.NaturezaPaiId
-            };
+            return MapToDto(natureza, new List<Natureza>());
         }
 
-        // Atualiza natureza
         public async Task<bool> UpdateAsync(string id, CreateNaturezaDto dto)
         {
-            var natureza = await _context.Natureza.FindAsync(id);
-            if (natureza == null) return false;
+            var natureza = await ObterNaturezaPorId(id);
+            if (natureza is null) return false;
 
-            if (!string.IsNullOrEmpty(dto.NaturezaPaiId))
-            {
-                var pai = await _context.Natureza.FindAsync(dto.NaturezaPaiId);
-                if (pai == null)
-                    throw new ArgumentException("Natureza pai não encontrada");
-            }
+            var codigoEmUso = await _context.Natureza
+                .AnyAsync(n => n.CodigoNatureza == dto.CodigoNatureza && n.Id != id);
 
-            var codigoExistente = await _context
-                .Natureza.AnyAsync(n => n.CodigoNatureza == dto.CodigoNatureza);
-
-            if (codigoExistente)
+            if (codigoEmUso)
                 throw new ArgumentException("Já existe uma natureza com este código.");
+
+            if (!string.IsNullOrEmpty(dto.CodigoNaturezaPai))
+            {
+                var pai = await ObterNaturezaPorCodigo(dto.CodigoNaturezaPai);
+                if (pai is null)
+                    throw new ArgumentException("Natureza pai não encontrada");
+
+                natureza.NaturezaPaiId = pai.Id;
+            }
+            else
+            {
+                natureza.NaturezaPaiId = null;
+            }
 
             natureza.Nome = dto.Nome;
             natureza.CodigoNatureza = dto.CodigoNatureza;
-            natureza.NaturezaPaiId = dto.NaturezaPaiId;
 
             await _context.SaveChangesAsync();
             return true;
         }
 
-        // Remove natureza
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(string codigo)
         {
             var natureza = await _context.Natureza
                 .Include(n => n.SubNaturezas)
-                .FirstOrDefaultAsync(n => n.Id == id);
+                .FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
 
-            if (natureza == null) return false;
+            if (natureza is null) return false;
 
-            async Task RemoverSubNaturezas(Natureza n)
-            {
-                if (n.SubNaturezas != null && n.SubNaturezas.Any())
-                {
-                    foreach (var sub in n.SubNaturezas.ToList())
-                    {
-                        var subCompleta = await _context.Natureza
-                            .Include(x => x.SubNaturezas)
-                            .FirstOrDefaultAsync(x => x.Id == sub.Id);
-
-                        if (subCompleta != null)
-                        {
-                            await RemoverSubNaturezas(subCompleta);
-                            _context.Natureza.Remove(subCompleta);
-                        }
-                    }
-                }
-            }
-
-            await RemoverSubNaturezas(natureza);
+            await RemoverSubNaturezasRecursivamente(natureza);
             _context.Natureza.Remove(natureza);
 
             await _context.SaveChangesAsync();
             return true;
         }
 
-        // Buscar irmãs (naturezas com mesmo pai)
-        public async Task<List<NaturezaDto>> GetIrmasAsync(string id)
+        public async Task<List<NaturezaDto>> GetIrmasAsync(string codigo)
         {
-            var natureza = await _context.Natureza.FindAsync(id);
-            if (natureza == null) return new List<NaturezaDto>();
+            var natureza = await ObterNaturezaPorCodigo(codigo);
+            if (natureza is null) return new List<NaturezaDto>();
 
             var irmas = await _context.Natureza
-                .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != id)
+                .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != natureza.Id)
                 .ToListAsync();
 
-            return irmas.Select(n => new NaturezaDto
+            return irmas.Select(n => MapToDto(n, new List<Natureza>())).ToList();
+        }
+
+        private NaturezaDto MapToDto(Natureza n, List<Natureza> todasNaturezas)
+        {
+            var dto = new NaturezaDto
             {
                 Id = n.Id,
                 Nome = n.Nome,
                 CodigoNatureza = n.CodigoNatureza,
                 NaturezaPaiId = n.NaturezaPaiId
-            }).ToList();
+            };
+
+            var subNaturezas = todasNaturezas
+                .Where(sn => sn.NaturezaPaiId == n.Id)
+                .OrderBy(sn => sn.CodigoNatureza)
+                .ToList();
+
+            foreach (var sub in subNaturezas)
+            {
+                dto.SubNaturezas.Add(MapToDto(sub, todasNaturezas));
+            }
+
+            return dto;
+        }
+
+        private async Task ValidarCodigoDuplicado(string codigo)
+        {
+            var duplicado = await _context.Natureza
+                .AnyAsync(n => n.CodigoNatureza == codigo);
+
+            if (duplicado)
+                throw new ArgumentException("Já existe uma natureza com este código.");
+        }
+
+        private async Task<Natureza?> ObterNaturezaPorId(string id) =>
+            await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
+
+        private async Task<Natureza?> ObterNaturezaPorCodigo(string codigo) =>
+            await _context.Natureza.FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
+
+        private async Task RemoverSubNaturezasRecursivamente(Natureza n)
+        {
+            if (n.SubNaturezas is null || !n.SubNaturezas.Any()) return;
+
+            foreach (var sub in n.SubNaturezas.ToList())
+            {
+                var subCompleta = await _context.Natureza
+                    .Include(x => x.SubNaturezas)
+                    .FirstOrDefaultAsync(x => x.CodigoNatureza == sub.CodigoNatureza);
+
+                if (subCompleta is null) continue;
+
+                await RemoverSubNaturezasRecursivamente(subCompleta);
+                _context.Natureza.Remove(subCompleta);
+            }
         }
     }
 }

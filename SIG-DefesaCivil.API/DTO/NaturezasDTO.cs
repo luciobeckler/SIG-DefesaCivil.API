@@ -6,12 +6,14 @@
         public string Nome { get; set; }
         public string CodigoNatureza { get; set; }
         public string? NaturezaPaiId { get; set; }
+
+        public List<NaturezaDto> SubNaturezas { get; set; } = new();
     }
 
     public class CreateNaturezaDto
     {
         public string Nome { get; set; }
         public string CodigoNatureza { get; set; }
-        public string? NaturezaPaiId { get; set; }
+        public string? CodigoNaturezaPai { get; set; }
     }
 }

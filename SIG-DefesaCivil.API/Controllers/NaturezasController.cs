@@ -25,9 +25,9 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<NaturezaDto>> GetNatureza(string id)
+        public async Task<ActionResult<NaturezaDto>> GetNatureza(string codigo)
         {
-            var natureza = await _service.GetByIdAsync(id);
+            var natureza = await _service.GetByCodigoAsync(codigo);
             if (natureza == null) return NotFound();
             return natureza;
         }
@@ -52,7 +52,10 @@ namespace SIG_DefesaCivil.API.Controllers
             try
             {
                 var updated = await _service.UpdateAsync(id, dto);
-                if (!updated) return NotFound();
+
+                if (!updated)
+                    return NotFound();
+
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -61,12 +64,13 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNatureza(string id)
+
+        [HttpDelete("{codigo}")]
+        public async Task<IActionResult> DeleteNatureza(string codigo)
         {
             try
             {
-                var deleted = await _service.DeleteAsync(id);
+                var deleted = await _service.DeleteAsync(codigo);
                 if (!deleted) return NotFound();
                 return NoContent();
             }
