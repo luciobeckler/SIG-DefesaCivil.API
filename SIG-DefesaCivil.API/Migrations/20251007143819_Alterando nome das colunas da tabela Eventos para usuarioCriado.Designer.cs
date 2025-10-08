@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Context;
 
@@ -11,9 +12,11 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251007143819_Alterando nome das colunas da tabela Eventos para usuarioCriado")]
+    partial class AlterandonomedascolunasdatabelaEventosparausuarioCriado
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -164,12 +167,12 @@ namespace SIG_DefesaCivil.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("DataHora")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("EventoId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("UltimaAlteracao")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()

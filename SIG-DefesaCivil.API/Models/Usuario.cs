@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using SIG_DefesaCivil.API.Models.Eventos;
 
 namespace SIG_DefesaCivil.API.Models
 {

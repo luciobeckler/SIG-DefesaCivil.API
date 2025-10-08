@@ -1,40 +1,64 @@
-﻿using SIG_DefesaCivil.API.Models;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Models.Eventos;
 
 namespace SIG_DefesaCivil.API.Context
 {
     public class DefesaCivilDbContext : IdentityDbContext<Usuario, IdentityRole, string>
     {
-        public DefesaCivilDbContext(DbContextOptions<DefesaCivilDbContext> options) : base(options){}
+        public DefesaCivilDbContext(DbContextOptions<DefesaCivilDbContext> options)
+            : base(options){}
+
+        // Tabelas
         public DbSet<Natureza> Natureza { get; set; }
         public DbSet<Evento> Eventos { get; set; }
+        public DbSet<EventoHistorico> EventosHistoricos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Auto-relacionamento de Naturezas
+            // === Configuração de Naturezas ===
             modelBuilder.Entity<Natureza>()
                 .HasMany(n => n.SubNaturezas)
                 .WithOne(n => n.NaturezaPai)
                 .HasForeignKey(n => n.NaturezaPaiId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Auto-relacionamento de Eventos
+            // === Auto-relacionamento de Eventos ===
             modelBuilder.Entity<Evento>()
                 .HasMany(e => e.SubEventos)
                 .WithOne(e => e.EventoPai)
                 .HasForeignKey(e => e.EventoPaiId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relacionamento entre Evento e Usuario
+            // === Relacionamento Evento ↔ Usuário ===
             modelBuilder.Entity<Evento>()
-                .HasOne(e => e.Usuario)
+                .HasOne(e => e.UsuarioCriador)
                 .WithMany(u => u.EventosCriados)
-                .HasForeignKey(e => e.UsuarioId)
+                .HasForeignKey(e => e.UsuarioCriadorId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // === Relacionamento EventoHistorico ↔ Evento ===
+            modelBuilder.Entity<EventoHistorico>()
+                .HasOne(h => h.Evento)
+                .WithMany()
+                .HasForeignKey(h => h.EventoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // === Relacionamento EventoHistorico ↔ Usuario ===
+            modelBuilder.Entity<EventoHistorico>()
+                .HasOne(h => h.Usuario)
+                .WithMany()
+                .HasForeignKey(h => h.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // === Nomes das tabelas (opcional, para padronizar) ===
+            modelBuilder.Entity<Evento>().ToTable("Eventos");
+            modelBuilder.Entity<Natureza>().ToTable("Naturezas");
+            modelBuilder.Entity<EventoHistorico>().ToTable("EventosHistoricos");
         }
     }
 }

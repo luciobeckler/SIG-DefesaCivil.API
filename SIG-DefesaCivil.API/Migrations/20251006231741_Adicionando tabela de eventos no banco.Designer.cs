@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Context;
 
@@ -11,9 +12,11 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251006231741_Adicionando tabela de eventos no banco")]
+    partial class Adicionandotabeladeeventosnobanco
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -164,12 +167,12 @@ namespace SIG_DefesaCivil.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("DataHora")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("EventoId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("UltimaAlteracao")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()
@@ -215,7 +218,7 @@ namespace SIG_DefesaCivil.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UsuarioCriadorId")
+                    b.Property<string>("UsuarioId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
@@ -223,7 +226,7 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasIndex("EventoPaiId");
 
-                    b.HasIndex("UsuarioCriadorId");
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Eventos", (string)null);
                 });
@@ -424,15 +427,15 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasForeignKey("EventoPaiId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIG_DefesaCivil.API.Models.Usuario", "UsuarioCriador")
+                    b.HasOne("SIG_DefesaCivil.API.Models.Usuario", "Usuario")
                         .WithMany("EventosCriados")
-                        .HasForeignKey("UsuarioCriadorId")
+                        .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EventoPai");
 
-                    b.Navigation("UsuarioCriador");
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Natureza", b =>
