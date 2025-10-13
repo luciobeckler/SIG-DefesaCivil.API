@@ -34,10 +34,11 @@ namespace SIG_DefesaCivil.API.Services
             return eventosPreview;
         }
 
+        //!todo corrigir erro do get, ver gemini
         public async Task<Evento> DetalhesEventosPorId(string id, Usuario usuario)
         {
-            var evento = await RecuperaEventoPorId(id);
-            VerificaSeUsuarioPodeVerDetalhes(evento.UsuarioCriadorId, usuario);
+            var evento = await RecuperaEventoCompletoPorId(id);
+            VerificaSeUsuarioPossuiPermissao(evento.UsuarioCriadorId, usuario);
             
             string acao = "Visualizou detalhes";
             AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
@@ -70,28 +71,23 @@ namespace SIG_DefesaCivil.API.Services
             } 
         }
 
-        private void VerificaSeUsuarioPodeVerDetalhes(string criadorId, Usuario usuario)
+        private async Task<Evento> RecuperaEventoCompletoPorId(string id)
         {
-            var temPermissao = usuario.Cargo == "Administrador"
-                  || usuario.Cargo == "Diretor"
-                  || usuario.Id == criadorId;
-
-            if (!temPermissao)
-            {
-                throw new UnauthorizedAccessException("Você não possui permissão para acessar os detalhes deste evento.");
-            }
-        }
-
-        private async Task<Evento> RecuperaEventoPorId(string id)
-        {
+            await VerificaSeEventoExiste(id);
+            
             var evento = await _context.Eventos
-                .Include(e => e.UsuarioCriador) 
+                .Include(e => e.UsuarioCriador)
+                .Include(e => e.SubEventos)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (evento == null)
-                throw new InvalidOperationException($"O evento com o ID '{id}' não foi encontrado.");
-
             return evento;
+        }
+
+        private async Task VerificaSeEventoExiste(string id)
+        {
+            var isEventoExiste = await _context.Eventos.AnyAsync(e => e.Id == id);
+            if (!isEventoExiste)
+                throw new InvalidOperationException($"O evento com o ID '{id}' não foi encontrado.");
         }
 
         public async Task<Evento> CriarAsync(CreateOrEditEventoDTO dto, Usuario usuario)
@@ -124,7 +120,7 @@ namespace SIG_DefesaCivil.API.Services
             {
                 foreach (var id in dto.SubEventosId)
                 {
-                    var subEvento = await RecuperaEventoPorId(id);
+                    var subEvento = await RecuperaEventoCompletoPorId(id);
                     eventoPai.SubEventos.Add(subEvento);
 
                     subEvento.EventoPai = eventoPai;
@@ -135,16 +131,97 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task AtualizarAsync(string id, CreateOrEditEventoDTO dto, Usuario usuario)
         {
-            
+            await ValidarCodigoUnicoAsync(dto.Codigo, id);
+
+            var evento = await RecuperaEventoCompletoPorId(id);
+            VerificaSeUsuarioPossuiPermissao(evento.UsuarioCriadorId, usuario); 
+
+            evento.Codigo = dto.Codigo;
+            evento.Titulo = dto.Titulo;
+            evento.Descricao = dto.Descricao;
+            evento.Endereco = dto.Endereco;
+            evento.Status = dto.Status;
+            evento.DataEHoraDoEvento = dto.DataEHoraDoEvento;
+
+            //!TODO criar método para reutilizar esta verificação
+            if (string.IsNullOrWhiteSpace(dto.EventoPaiId))
+            {
+                evento.EventoPai = null;
+            }
+            else
+            {
+                await VerificaSeEventoExiste(dto.EventoPaiId);
+                evento.EventoPaiId = dto.EventoPaiId;
+            }
+            await AtualizaRelacionamentoSubEventosAsync(evento, dto);
+
+            var acao = "Editou evento";
+            AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
+
+            await _context.SaveChangesAsync();
         }
 
-        private async Task ValidarCodigoUnicoAsync(string codigo, string? eventoId = null)
+        private async Task AtualizaRelacionamentoSubEventosAsync(Evento eventoParaAtualizar, CreateOrEditEventoDTO dto)
+        {
+            var novosIds = dto.SubEventosId?.ToHashSet() ?? new HashSet<string>();
+
+            if (novosIds.Contains(eventoParaAtualizar.Id))
+            {
+                throw new InvalidOperationException("Um evento não pode ser definido como seu próprio sub-evento.");
+            }
+            var idsAtuais = eventoParaAtualizar.SubEventos.Select(s => s.Id).ToHashSet();
+
+            var subEventosParaRemover = eventoParaAtualizar.SubEventos
+                .Where(s => !novosIds.Contains(s.Id))
+                .ToList();
+
+            foreach (var subEvento in subEventosParaRemover)
+            {
+                eventoParaAtualizar.SubEventos.Remove(subEvento);
+            }
+
+            var idsParaAdicionar = novosIds.Where(id => !idsAtuais.Contains(id)).ToList();
+
+            if (idsParaAdicionar.Any())
+            {
+                var subEventosParaAdicionar = await _context.Eventos
+                    .Where(e => idsParaAdicionar.Contains(e.Id))
+                    .ToListAsync();
+
+                if (subEventosParaAdicionar.Count != idsParaAdicionar.Count)
+                {
+                    var idsEncontrados = subEventosParaAdicionar.Select(e => e.Id).ToList();
+                    var idsNaoEncontrados = idsParaAdicionar.Except(idsEncontrados);
+
+                    throw new InvalidOperationException($"Os seguintes IDs de sub-eventos não foram encontrados: {string.Join(", ", idsNaoEncontrados)}");
+                }
+
+                foreach (var subEvento in subEventosParaAdicionar)
+                {
+                    eventoParaAtualizar.SubEventos.Add(subEvento);
+                }
+            }
+        }
+
+        private void VerificaSeUsuarioPossuiPermissao(string criadorId, Usuario usuario)
+        {
+            var temPermissao = usuario.Cargo == "ADMINISTRADOR"
+                    || usuario.Cargo == "DIRETOR"
+                    || usuario.Id == criadorId;
+
+            if (!temPermissao)
+            {
+                throw new UnauthorizedAccessException("Você não possui permissão para editar este evento.");
+            }
+        }
+
+        private async Task ValidarCodigoUnicoAsync(string codigo, string? eventoIgnoradoId = null)
         {
             var query = _context.Eventos.AsNoTracking().Where(e => e.Codigo.ToUpper() == codigo.ToUpper());
 
-            if (eventoId != null)
+            if (eventoIgnoradoId != null)
             {
-                query = query.Where(e => e.Id != eventoId);
+                query = query.Where(e => e.Id != eventoIgnoradoId);
             }
 
             if (await query.AnyAsync())
@@ -153,23 +230,33 @@ namespace SIG_DefesaCivil.API.Services
             }
         }
 
-        public async Task<bool> DeletarAsync(string id, Usuario usuario)
+        public async Task DeletarAsync(string id, Usuario usuario)
         {
-            var evento = await _context.Eventos.FindAsync(id);
-            if (evento == null) return false;
+            var evento = await _context.Eventos
+                .Include(e => e.SubEventos)
+                .FirstOrDefaultAsync(e => e.Id == id);
 
-            bool podeDeletar = usuario.Cargo == "Administrador" || usuario.Cargo == "Diretor";
+            if (evento == null)
+            {
+                throw new InvalidOperationException($"O evento com o ID '{id}' não foi encontrado.");
+            }
+
+            bool podeDeletar = usuario.Cargo.ToUpper() == "ADMINISTRADOR" || usuario.Cargo.ToUpper() == "DIRETOR";
             if (!podeDeletar)
                 throw new UnauthorizedAccessException("Você não tem permissão para excluir eventos.");
 
+            if (evento.SubEventos != null && evento.SubEventos.Any())
+            {
+                throw new InvalidOperationException("Não é possível excluir este evento pois ele possui sub-eventos associados. Remova ou reatribua os sub-eventos primeiro.");
+            }
+
             _context.Eventos.Remove(evento);
             await _context.SaveChangesAsync();
-            return true;
         }
 
         public async Task<IEnumerable<EventoHistorico>> ListarHistoricoAsync(string eventoId, Usuario usuario)
         {
-            if (usuario.Cargo != "Administrador" && usuario.Cargo != "Diretor")
+            if (usuario.Cargo != "ADMINISTRADOR" && usuario.Cargo != "DIRETOR")
                 throw new UnauthorizedAccessException("Acesso restrito aos administradores e diretores.");
 
             return await _context.EventosHistoricos

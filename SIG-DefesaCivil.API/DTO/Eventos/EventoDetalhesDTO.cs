@@ -11,10 +11,10 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
         public string Descricao { get; set; }
         public string Endereco { get; set; }
         public string Status { get; set; }
-        public DateTime DataHora { get; set; }
+        public string EventoPaiId { get; set; }
+        public DateTime DataEHoraDoEvento { get; set; }
 
-        public string UsuarioCriadorId { get; set; }
-        public string? EventoPaiId { get; set; }
-        public ICollection<Evento>? SubEventos { get; set; }
+        public EventoDetalhesUsuarioDTO UsuarioCriador { get; set; }
+        public ICollection<EventoDetalhesSubEventoDTO> SubEventos { get; set; }
     }
 }
