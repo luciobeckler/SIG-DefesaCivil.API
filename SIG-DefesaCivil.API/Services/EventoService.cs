@@ -34,7 +34,6 @@ namespace SIG_DefesaCivil.API.Services
             return eventosPreview;
         }
 
-        //!todo corrigir erro do get, ver gemini
         public async Task<Evento> DetalhesEventosPorId(string id, Usuario usuario)
         {
             var evento = await RecuperaEventoCompletoPorId(id);
@@ -249,7 +248,6 @@ namespace SIG_DefesaCivil.API.Services
             {
                 throw new InvalidOperationException("Não é possível excluir este evento pois ele possui sub-eventos associados. Remova ou reatribua os sub-eventos primeiro.");
             }
-
             _context.Eventos.Remove(evento);
             await _context.SaveChangesAsync();
         }

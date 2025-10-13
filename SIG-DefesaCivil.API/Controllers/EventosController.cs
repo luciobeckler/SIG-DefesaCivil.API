@@ -22,9 +22,6 @@ namespace SIG_DefesaCivil.API.Controllers
             _service = service;
             _userManager = userManager;
         }
-
-        // --- MÉTODOS PRIVADOS AUXILIARES ---
-
         private async Task<Usuario> GetUsuarioAtual()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,12 +31,9 @@ namespace SIG_DefesaCivil.API.Controllers
             }
             return await _userManager.FindByIdAsync(userId);
         }
-
-        // NOVO MÉTODO DE MAPEAMENTO PARA EVITAR REPETIÇÃO DE CÓDIGO (DRY PRINCIPLE)
         private EventoDetalhesDTO MapearParaDetalhesDTO(Evento evento)
         {
             if (evento == null) return null;
-
             return new EventoDetalhesDTO
             {
                 Id = evento.Id,
@@ -64,7 +58,6 @@ namespace SIG_DefesaCivil.API.Controllers
                 }).ToList() ?? new List<EventoDetalhesSubEventoDTO>()
             };
         }
-
 
         [HttpGet("getAllPreview")]
         [ProducesResponseType(typeof(IEnumerable<EventoPreviewDTO>), 200)]

@@ -3,7 +3,7 @@
     public class EventoDetalhesUsuarioDTO
     {
         public string Id { get; set; }
-        public string Nome { get; set; } // Supondo que seu Usuario tenha uma prop Nome
+        public string Nome { get; set; }
         public string Email { get; set; }
     }
 }
