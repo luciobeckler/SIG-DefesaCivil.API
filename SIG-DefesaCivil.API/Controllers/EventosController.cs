@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
 using SIG_DefesaCivil.API.Services;
@@ -43,19 +44,21 @@ namespace SIG_DefesaCivil.API.Controllers
                 Endereco = evento.Endereco,
                 Status = evento.Status,
                 DataEHoraDoEvento = evento.DataEHoraDoEvento,
-                EventoPaiId = evento.EventoPaiId,
                 UsuarioCriador = evento.UsuarioCriador != null ? new EventoDetalhesUsuarioDTO
                 {
                     Id = evento.UsuarioCriador.Id,
                     Nome = evento.UsuarioCriador.UserName,
-                    Email = evento.UsuarioCriador.Email
+                    Email = evento.UsuarioCriador.Email,
                 } : null,
-                SubEventos = evento.SubEventos?.Select(sub => new EventoDetalhesSubEventoDTO
+                SubEventos = evento.SubEventos?.Select(sub => new EventoPreviewDTO
                 {
-                    Id = sub.Id,
-                    Codigo = sub.Codigo,
-                    Titulo = sub.Titulo
-                }).ToList() ?? new List<EventoDetalhesSubEventoDTO>()
+                    id = sub.Id,
+                    codigo = sub.Codigo,
+                    titulo = sub.Titulo,
+                    emailResponsavel = sub.UsuarioCriador.Email,
+                    status = sub.Status
+                }).ToList()
+        ?? new List<EventoPreviewDTO>()
             };
         }
 
@@ -166,7 +169,32 @@ namespace SIG_DefesaCivil.API.Controllers
         {
             var usuario = await GetUsuarioAtual();
             var historico = await _service.ListarHistoricoAsync(id, usuario);
-            return Ok(historico);
+            var historicoDTO = historico
+                .Select(h => new EventoHistoricoDTO
+                {
+                    Id = h.Id,
+                    EventoId = h.EventoId,
+                    UsuarioId = h.UsuarioId,
+                    Acao = h.Acao,
+                    UltimaAlteracao = h.UltimaAlteracao
+                });
+            return Ok(historicoDTO);
+        }
+
+        [HttpGet("status")] 
+        [AllowAnonymous] 
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+        public IActionResult GetStatusOptions()
+        {
+            var statusOptions = Enum.GetNames(typeof(EStatusEvento))
+                                    .Select(statusName => new
+                                    {
+                                        value = statusName,
+                                        displayName = statusName
+                                    })
+                                    .ToList();
+
+            return Ok(statusOptions);
         }
     }
 }

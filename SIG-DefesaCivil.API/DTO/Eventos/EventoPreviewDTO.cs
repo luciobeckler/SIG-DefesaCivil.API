@@ -1,4 +1,5 @@
-﻿using SIG_DefesaCivil.API.Models;
+﻿using SIG_DefesaCivil.API.Enums;
+using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.DTO.Eventos
 {
@@ -7,7 +8,7 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
         public string id { get; set; }
         public string codigo { get; set; }
         public string titulo { get; set; }
-        public string status { get; set; }
+        public EStatusEvento status { get; set; }
         public string emailResponsavel { get; set; }
 
     }

@@ -1,4 +1,6 @@
-﻿namespace SIG_DefesaCivil.API.DTO.Eventos
+﻿using SIG_DefesaCivil.API.Enums;
+
+namespace SIG_DefesaCivil.API.DTO.Eventos
 {
     public class CreateOrEditEventoDTO
     {

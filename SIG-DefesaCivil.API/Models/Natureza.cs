@@ -1,4 +1,8 @@
-﻿namespace SIG_DefesaCivil.API.Models
+﻿// SIG_DefesaCivil.API/Models/Natureza.cs
+
+using SIG_DefesaCivil.API.Models.Eventos;
+
+namespace SIG_DefesaCivil.API.Models
 {
     public class Natureza
     {
@@ -6,9 +10,12 @@
         public string Nome { get; set; }
         public string CodigoNatureza { get; set; }
 
-        // Auto-relação: Uma natureza pode ter várias subnaturezas
+        // Auto-relação de hierarquia
         public string? NaturezaPaiId { get; set; }
         public Natureza? NaturezaPai { get; set; }
         public ICollection<Natureza>? SubNaturezas { get; set; }
+
+        // N-N com eventos
+        public ICollection<Evento> Eventos { get; set; }
     }
 }

@@ -1,4 +1,8 @@
-﻿namespace SIG_DefesaCivil.API.Models.Eventos
+﻿// SIG_DefesaCivil.API/Models/Eventos/Evento.cs
+
+using SIG_DefesaCivil.API.Enums;
+
+namespace SIG_DefesaCivil.API.Models.Eventos
 {
     public class Evento
     {
@@ -7,16 +11,19 @@
         public string Titulo { get; set; }
         public string Descricao { get; set; }
         public string Endereco { get; set; }
-        public string Status { get; set; }
+        public EStatusEvento Status { get; set; }
         public DateTime DataEHoraDoEvento { get; set; }
 
-        // Relacionamento com usuários: Um usuário pode ser responsável por vários eventos
+        // Relacionamento com usuários
         public string UsuarioCriadorId { get; set; }
         public Usuario UsuarioCriador { get; set; }
 
-        // Auto-relação: Um evento pode ter subeventos
+        // Auto-relação de hierarquia
         public string? EventoPaiId { get; set; }
         public Evento? EventoPai { get; set; }
         public ICollection<Evento>? SubEventos { get; set; }
+
+        // N-N com eventos
+        public ICollection<Natureza> Naturezas { get; set; }
     }
 }

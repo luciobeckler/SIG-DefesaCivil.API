@@ -34,6 +34,18 @@ namespace SIG_DefesaCivil.API.Context
                 .HasForeignKey(e => e.EventoPaiId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            /// N-N Eventos e naturezaas
+            modelBuilder.Entity<Evento>()
+                .HasMany(e => e.Naturezas)     
+                .WithMany(n => n.Eventos)       
+                .UsingEntity(j => j.ToTable("EventoNaturezas"));
+
+            // === Enum de status ===
+            modelBuilder.Entity<Evento>()
+                .Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
             // === Relacionamento Evento ↔ Usuário ===
             modelBuilder.Entity<Evento>()
                 .HasOne(e => e.UsuarioCriador)
