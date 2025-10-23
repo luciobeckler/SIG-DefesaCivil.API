@@ -1,9 +1,6 @@
-﻿using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Eventos;
-
-namespace SIG_DefesaCivil.API.DTO.Eventos
+﻿namespace SIG_DefesaCivil.API.DTO.Eventos
 {
-    public class EventoHistoricoDTO
+    public class HistoricoEventoDTO
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string EventoId { get; set; }

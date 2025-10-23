@@ -19,21 +19,27 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NaturezaDto>>> GetNaturezas()
+        public async Task<ActionResult<IEnumerable<NaturezaDTO>>> GetNaturezas()
         {
             return await _service.GetAllAsync();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<NaturezaDto>> GetNatureza(string codigo)
+        public async Task<ActionResult<NaturezaDTO>> GetNatureza(string codigo)
         {
-            var natureza = await _service.GetByCodigoAsync(codigo);
-            if (natureza == null) return NotFound();
-            return natureza;
+            try
+            {
+                var natureza = await _service.GetByCodigoAsync(codigo);
+                return Ok(natureza);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult<Natureza>> PostNatureza(CreateNaturezaDto dto)
+        public async Task<ActionResult<Natureza>> PostNatureza(CreateNaturezaDTO dto)
         {
             try
             {
@@ -47,7 +53,7 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutNatureza(string id, CreateNaturezaDto dto)
+        public async Task<IActionResult> PutNatureza(string id, CreateNaturezaDTO dto)
         {
             try
             {
@@ -81,7 +87,7 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpGet("{id}/irmas")]
-        public async Task<ActionResult<IEnumerable<NaturezaDto>>> GetIrmas(string id)
+        public async Task<ActionResult<IEnumerable<NaturezaDTO>>> GetIrmas(string id)
         {
             return await _service.GetIrmasAsync(id);
         }

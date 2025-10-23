@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTOs;
+using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services
@@ -8,13 +10,15 @@ namespace SIG_DefesaCivil.API.Services
     public class NaturezaService
     {
         private readonly DefesaCivilDbContext _context;
+        private readonly IMapper _mapper;
 
-        public NaturezaService(DefesaCivilDbContext context)
+        public NaturezaService(DefesaCivilDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public async Task<List<NaturezaDto>> GetAllAsync()
+        public async Task<List<NaturezaDTO>> GetAllAsync()
         {
             var todasNaturezas = await _context.Natureza
                 .Include(n => n.SubNaturezas)
@@ -25,16 +29,28 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderBy(n => n.CodigoNatureza)
                 .ToList();
 
-            return raizes.Select(n => MapToDto(n, todasNaturezas)).ToList();
+            return _mapper.Map<List<NaturezaDTO>>(raizes);
         }
 
-        public async Task<NaturezaDto?> GetByCodigoAsync(string codigo)
+        public async Task<NaturezaDTO> GetByCodigoAsync(string codigo)
         {
             var natureza = await ObterNaturezaPorCodigo(codigo);
-            return natureza is null ? null : MapToDto(natureza, new List<Natureza>());
+            if (natureza is null)
+                throw new ArgumentException("Natureza não encontrada");
+            
+            return _mapper.Map<NaturezaDTO>(natureza);
         }
 
-        public async Task<NaturezaDto> CreateAsync(CreateNaturezaDto dto)
+        public async Task<NaturezaDTO> GetByIdAsync(string id)
+        {
+            var natureza = await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
+            if (natureza is null)
+                throw new ArgumentException("Natureza não encontrada");
+
+            return _mapper.Map<NaturezaDTO>(natureza);
+        }
+
+        public async Task<NaturezaDTO> CreateAsync(CreateNaturezaDTO dto)
         {
             await ValidarCodigoDuplicado(dto.CodigoNatureza);
 
@@ -49,21 +65,17 @@ namespace SIG_DefesaCivil.API.Services
                 naturezaPaiId = naturezaPai.Id;
             }
 
-            var natureza = new Natureza
-            {
-                Id = Guid.NewGuid().ToString(),
-                Nome = dto.Nome,
-                CodigoNatureza = dto.CodigoNatureza,
-                NaturezaPaiId = naturezaPaiId
-            };
+            var natureza = _mapper.Map<Natureza>(dto);
+            natureza.Id = Guid.NewGuid().ToString();
+            natureza.NaturezaPaiId = naturezaPaiId;
 
             _context.Natureza.Add(natureza);
             await _context.SaveChangesAsync();
 
-            return MapToDto(natureza, new List<Natureza>());
+            return _mapper.Map<NaturezaDTO>(natureza);
         }
 
-        public async Task<bool> UpdateAsync(string id, CreateNaturezaDto dto)
+        public async Task<bool> UpdateAsync(string id, CreateNaturezaDTO dto)
         {
             var natureza = await ObterNaturezaPorId(id);
             if (natureza is null) return false;
@@ -109,39 +121,17 @@ namespace SIG_DefesaCivil.API.Services
             return true;
         }
 
-        public async Task<List<NaturezaDto>> GetIrmasAsync(string codigo)
+        public async Task<List<NaturezaDTO>> GetIrmasAsync(string codigo)
         {
             var natureza = await ObterNaturezaPorCodigo(codigo);
-            if (natureza is null) return new List<NaturezaDto>();
+            if (natureza is null) 
+                return new List<NaturezaDTO>();
 
             var irmas = await _context.Natureza
                 .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != natureza.Id)
                 .ToListAsync();
 
-            return irmas.Select(n => MapToDto(n, new List<Natureza>())).ToList();
-        }
-
-        private NaturezaDto MapToDto(Natureza n, List<Natureza> todasNaturezas)
-        {
-            var dto = new NaturezaDto
-            {
-                Id = n.Id,
-                Nome = n.Nome,
-                CodigoNatureza = n.CodigoNatureza,
-                NaturezaPaiId = n.NaturezaPaiId
-            };
-
-            var subNaturezas = todasNaturezas
-                .Where(sn => sn.NaturezaPaiId == n.Id)
-                .OrderBy(sn => sn.CodigoNatureza)
-                .ToList();
-
-            foreach (var sub in subNaturezas)
-            {
-                dto.SubNaturezas.Add(MapToDto(sub, todasNaturezas));
-            }
-
-            return dto;
+            return _mapper.Map<List<NaturezaDTO>>(irmas);
         }
 
         private async Task ValidarCodigoDuplicado(string codigo)

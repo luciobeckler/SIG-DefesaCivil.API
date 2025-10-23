@@ -13,6 +13,7 @@ namespace SIG_DefesaCivil.API.Models.Eventos
         public string Endereco { get; set; }
         public EStatusEvento Status { get; set; }
         public DateTime DataEHoraDoEvento { get; set; }
+        public bool isVisible { get; set; } = true;
 
         // Relacionamento com usuários
         public string UsuarioCriadorId { get; set; }

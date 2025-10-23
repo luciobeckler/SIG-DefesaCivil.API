@@ -1,0 +1,46 @@
+﻿// SIG_DefesaCivil.API/Helper/AutoMapperProfile.cs
+using AutoMapper;
+using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos; // Ajuste este namespace se necessário
+using SIG_DefesaCivil.API.DTOs; // Assume que NaturezaDTO e CreateNaturezaDTO estão aqui
+using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Models.Eventos;
+
+namespace SIG_DefesaCivil.API.Helper
+{
+    public class AutoMapperProfile : Profile
+    {
+        public AutoMapperProfile()
+        {
+            // ==== Eventos ====
+
+            CreateMap<Evento, EventoPreviewDTO>()
+                .ForMember(
+                dest => dest.EmailResponsavel, opt => opt.MapFrom(src => src.UsuarioCriador.NormalizedEmail))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<CreateOrEditEventoDTO, Evento>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore()) 
+                .ForMember(dest => dest.UsuarioCriadorId, opt => opt.Ignore()) 
+                .ForMember(dest => dest.UsuarioCriador, opt => opt.Ignore())
+                .ForMember(dest => dest.EventoPai, opt => opt.Ignore()) 
+                .ForMember(dest => dest.EventoPaiId, opt => opt.Ignore()) 
+                .ForMember(dest => dest.SubEventos, opt => opt.Ignore())
+                .ForMember(dest => dest.Naturezas, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Status, opt => opt.Ignore());
+
+            CreateMap<Evento, EventoDetalhesDTO>()
+                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString())) 
+                 .ForMember(dest => dest.EventoPai, opt => opt.MapFrom(src => src.EventoPai)); 
+
+
+            // ==== Usuários (Para EventoDetalhesDTO) ====
+            CreateMap<Usuario, EventoDetalhesUsuarioDTO>()
+                .ForMember(dest => dest.Nome, opt => opt.MapFrom(src => src.UserName)); 
+
+            // ==== Naturezas ====
+            CreateMap<Natureza, NaturezaResumoDTO>(); 
+            CreateMap<Natureza, NaturezaDTO>();
+            CreateMap<CreateNaturezaDTO, Natureza>();
+        }
+    }
+}

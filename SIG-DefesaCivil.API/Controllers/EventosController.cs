@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
@@ -17,11 +19,13 @@ namespace SIG_DefesaCivil.API.Controllers
     {
         private readonly EventoService _service;
         private readonly UserManager<Usuario> _userManager;
+        private readonly IMapper _mapper;
 
-        public EventoController(EventoService service, UserManager<Usuario> userManager)
+        public EventoController(EventoService service, UserManager<Usuario> userManager, IMapper mapper)
         {
             _service = service;
             _userManager = userManager;
+            _mapper = mapper;
         }
         private async Task<Usuario> GetUsuarioAtual()
         {
@@ -31,35 +35,6 @@ namespace SIG_DefesaCivil.API.Controllers
                 throw new UnauthorizedAccessException("Usuário não encontrado no token.");
             }
             return await _userManager.FindByIdAsync(userId);
-        }
-        private EventoDetalhesDTO MapearParaDetalhesDTO(Evento evento)
-        {
-            if (evento == null) return null;
-            return new EventoDetalhesDTO
-            {
-                Id = evento.Id,
-                Codigo = evento.Codigo,
-                Titulo = evento.Titulo,
-                Descricao = evento.Descricao,
-                Endereco = evento.Endereco,
-                Status = evento.Status,
-                DataEHoraDoEvento = evento.DataEHoraDoEvento,
-                UsuarioCriador = evento.UsuarioCriador != null ? new EventoDetalhesUsuarioDTO
-                {
-                    Id = evento.UsuarioCriador.Id,
-                    Nome = evento.UsuarioCriador.UserName,
-                    Email = evento.UsuarioCriador.Email,
-                } : null,
-                SubEventos = evento.SubEventos?.Select(sub => new EventoPreviewDTO
-                {
-                    id = sub.Id,
-                    codigo = sub.Codigo,
-                    titulo = sub.Titulo,
-                    emailResponsavel = sub.UsuarioCriador.Email,
-                    status = sub.Status
-                }).ToList()
-        ?? new List<EventoPreviewDTO>()
-            };
         }
 
         [HttpGet("getAllPreview")]
@@ -79,9 +54,7 @@ namespace SIG_DefesaCivil.API.Controllers
             try
             {
                 var usuario = await GetUsuarioAtual();
-                var evento = await _service.DetalhesEventosPorId(id, usuario);
-
-                var eventoDto = MapearParaDetalhesDTO(evento);
+                var eventoDto = await _service.DetalhesEventosPorId(id, usuario);
 
                 return Ok(eventoDto);
             }
@@ -105,8 +78,7 @@ namespace SIG_DefesaCivil.API.Controllers
             {
                 var usuario = await GetUsuarioAtual();
                 var eventoEntity = await _service.CriarAsync(dto, usuario);
-
-                var eventoDto = MapearParaDetalhesDTO(eventoEntity);
+                var eventoDto = _mapper.Map<EventoDetalhesDTO>(eventoEntity);
 
                 return CreatedAtAction(nameof(GetDetalhesById), new { id = eventoDto.Id }, eventoDto);
             }
@@ -170,7 +142,7 @@ namespace SIG_DefesaCivil.API.Controllers
             var usuario = await GetUsuarioAtual();
             var historico = await _service.ListarHistoricoAsync(id, usuario);
             var historicoDTO = historico
-                .Select(h => new EventoHistoricoDTO
+                .Select(h => new HistoricoEventoDTO
                 {
                     Id = h.Id,
                     EventoId = h.EventoId,

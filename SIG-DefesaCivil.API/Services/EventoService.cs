@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTOs;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
@@ -11,44 +12,49 @@ namespace SIG_DefesaCivil.API.Services
     public class EventoService
     {
         private readonly DefesaCivilDbContext _context;
+        private readonly IMapper _mapper;
+        private readonly NaturezaService _naturezaService;
 
-        public EventoService(DefesaCivilDbContext context)
+        public EventoService(DefesaCivilDbContext context, IMapper mapper, NaturezaService naturezaService)
         {
             _context = context;
+            _mapper = mapper;
+            _naturezaService = naturezaService;
         }
         public async Task<IEnumerable<EventoPreviewDTO>> ListarPreviewEventosAsync()
         {
             var allEventos = await _context.Eventos
+                .Where(e => e.isVisible == true)
                 .Include(e => e.UsuarioCriador)
+                .Include(e => e.Naturezas) 
+                .AsNoTracking()
                 .ToListAsync();
-            
-            var eventosPreview = allEventos.Select(x => new EventoPreviewDTO
-            {
-                id = x.Id,
-                codigo = x.Codigo,
-                titulo = x.Titulo,
-                status = x.Status,
-                emailResponsavel = x.UsuarioCriador.NormalizedEmail
-            });
-            
-            return eventosPreview;
+
+
+            return _mapper.Map<IEnumerable<EventoPreviewDTO>>(allEventos);
         }
 
-        public async Task<Evento> DetalhesEventosPorId(string id, Usuario usuario)
+        public async Task<EventoDetalhesDTO> DetalhesEventosPorId(string id, Usuario usuario)
         {
             var evento = await RecuperaEventoCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(evento.UsuarioCriadorId, usuario);
-            
+
             string acao = "Visualizou detalhes";
             AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
 
+            var eventoDto = _mapper.Map<EventoDetalhesDTO>(evento);
 
             await _context.SaveChangesAsync();
-            return evento;
+            return eventoDto;
         }
 
         public async Task<Evento> CriarAsync(CreateOrEditEventoDTO dto, Usuario usuario)
         {
+            await ValidarCodigoUnicoAsync(dto.Codigo);
+            ValidarHierarquiaUnica(dto);
+            await ValidarEventoPaiAsync(dto.EventoPaiId);
+            var statusEnum = ParseAndValidateStatus(dto.Status);
+            var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
             var evento = new Evento
             {
@@ -58,13 +64,11 @@ namespace SIG_DefesaCivil.API.Services
                 Descricao = dto.Descricao,
                 Endereco = dto.Endereco,
                 Status = ParseAndValidateStatus(dto.Status),
+                Naturezas = naturezas,
                 DataEHoraDoEvento = dto.DataEHoraDoEvento,
                 UsuarioCriadorId = usuario.Id,
                 EventoPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId,
             };
-
-            await ValidarCodigoUnicoAsync(dto.Codigo);
-            ValidarHierarquiaUnica(dto);
             await AssociaSubEventosNaCriacao(evento, dto);
 
             _context.Eventos.Add(evento);
@@ -76,6 +80,8 @@ namespace SIG_DefesaCivil.API.Services
         {
             await ValidarCodigoUnicoAsync(dto.Codigo, id);
             ValidarHierarquiaUnica(dto);
+            var statusEnum = ParseAndValidateStatus(dto.Status);
+            var naturezasParaAssociar = await ValidarEBuscarNaturezasAsync(dto.NaturezasId); // This returns ICollection<Natureza>
 
             var evento = await RecuperaEventoCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(evento.UsuarioCriadorId, usuario);
@@ -85,16 +91,13 @@ namespace SIG_DefesaCivil.API.Services
                 throw new InvalidOperationException("Um evento não pode ser definido como seu próprio evento pai.");
             }
 
-            evento.Codigo = dto.Codigo;
-            evento.Titulo = dto.Titulo;
-            evento.Descricao = dto.Descricao;
-            evento.Endereco = dto.Endereco;
-            evento.Status = ParseAndValidateStatus(dto.Status);
-            evento.DataEHoraDoEvento = dto.DataEHoraDoEvento;
-
+            _mapper.Map(dto, evento);
+            var naturezasDtoParaPassar = _mapper.Map<ICollection<NaturezaDTO>>(naturezasParaAssociar);
+            evento.Status = statusEnum;
+            
             await AtualizaEventoPaiAsync(evento, dto);
-
             await AtualizaRelacionamentoSubEventosAsync(evento, dto);
+            await AtualizaRelacionamentoNaturezasAsync(evento, naturezasDtoParaPassar);
 
             var acao = "Editou evento";
             AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
@@ -121,7 +124,8 @@ namespace SIG_DefesaCivil.API.Services
             {
                 throw new InvalidOperationException("Não é possível excluir este evento pois ele possui sub-eventos associados. Remova ou reatribua os sub-eventos primeiro.");
             }
-            _context.Eventos.Remove(evento);
+
+            evento.isVisible = false;
             await _context.SaveChangesAsync();
         }
 
@@ -255,17 +259,20 @@ namespace SIG_DefesaCivil.API.Services
                 registroUsuarioNoHistoricoEvento.UltimaAlteracao = DateTime.UtcNow;
             }
         }
-
         private async Task<Evento> RecuperaEventoCompletoPorId(string id)
         {
             var evento = await _context.Eventos
                 .Include(e => e.UsuarioCriador)
                 .Include(e => e.EventoPai)
                 .Include(e => e.SubEventos)
+                .Include(e => e.Naturezas)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (evento == null)
                 throw new InvalidOperationException($"O evento com o ID '{id}' não foi encontrado.");
+
+            if (!evento.isVisible)
+                throw new InvalidOperationException($"O evento com o ID '{id}' foi deletado, entre em contato com o administrador para mais informações.");
 
             return evento;
         }
@@ -321,6 +328,76 @@ namespace SIG_DefesaCivil.API.Services
             }
 
             return statusEnum;
+        }
+
+        private async Task<ICollection<Natureza>> ValidarEBuscarNaturezasAsync(ICollection<string>? naturezasId)
+        {
+            if (naturezasId == null || !naturezasId.Any())
+            {
+                return new List<Natureza>();
+            }
+
+            var naturezas = await _context.Natureza
+                                   .Where(n => naturezasId.Contains(n.Id))
+                                   .ToListAsync();
+
+            var uniqueRequestedIdsCount = naturezasId.Distinct().Count();
+            if (naturezas.Count != uniqueRequestedIdsCount)
+            {
+                var foundIds = naturezas.Select(n => n.Id).ToHashSet();
+                var missingIds = naturezasId.Distinct().Where(id => !foundIds.Contains(id));
+
+                throw new ArgumentException($"As seguintes IDs de naturezas não foram encontradas: {string.Join(", ", missingIds)}");
+            }
+
+            return naturezas;
+        }
+
+        private async Task AtualizaRelacionamentoNaturezasAsync(Evento eventoParaAtualizar, ICollection<NaturezaDTO> naturezasNoDto)
+        {
+            await _context.Entry(eventoParaAtualizar)
+                .Collection(e => e.Naturezas)
+                .LoadAsync();
+
+            var naturezasAtuais = eventoParaAtualizar.Naturezas ?? new List<Natureza>();
+            var naturezasDtoIds = naturezasNoDto?.Select(n => n.Id).ToHashSet() ?? new HashSet<string>();
+            var naturezasParaRemover = naturezasAtuais.Where(n => !naturezasDtoIds.Contains(n.Id)).ToList();
+
+            foreach (var nat in naturezasParaRemover)
+            {
+                naturezasAtuais.Remove(nat);
+            }
+
+            var naturezasAtuaisIds = naturezasAtuais.Select(n => n.Id).ToHashSet();
+            var idsParaAdicionar = naturezasDtoIds.Where(id => !naturezasAtuaisIds.Contains(id)).ToList();
+
+            if (idsParaAdicionar.Any())
+            {
+                var naturezasEntidadesParaAdicionar = await _context.Natureza
+                    .Where(n => idsParaAdicionar.Contains(n.Id))
+                    .ToListAsync();
+
+                if (naturezasEntidadesParaAdicionar.Count != idsParaAdicionar.Count)
+                {
+                    var idsEncontrados = naturezasEntidadesParaAdicionar.Select(n => n.Id).ToHashSet();
+                    var idsNaoEncontrados = idsParaAdicionar.Where(id => !idsEncontrados.Contains(id));
+                    throw new InvalidOperationException($"As seguintes IDs de naturezas não foram encontradas ao tentar adicioná-las: {string.Join(", ", idsNaoEncontrados)}");
+                }
+
+                foreach (var natEntidade in naturezasEntidadesParaAdicionar)
+                {
+                    naturezasAtuais.Add(natEntidade);
+                }
+            }
+            eventoParaAtualizar.Naturezas = naturezasAtuais;
+        }
+        private async Task ValidarEventoPaiAsync(string? eventoPaiId)
+        {
+            if (string.IsNullOrWhiteSpace(eventoPaiId)) 
+                return;
+            var paiExiste = await _context.Eventos.AnyAsync(e => e.Id == eventoPaiId);
+            if (!paiExiste) 
+                throw new InvalidOperationException($"O evento pai com o ID '{eventoPaiId}' não foi encontrado.");
         }
     }
 }

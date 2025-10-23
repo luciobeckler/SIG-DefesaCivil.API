@@ -1,13 +1,13 @@
 ﻿namespace SIG_DefesaCivil.API.DTOs
 {
-    public class NaturezaDto : NaturezaResumoDTO
+    public class NaturezaDTO : NaturezaResumoDTO
     {
         public string? NaturezaPaiId { get; set; }
 
-        public List<NaturezaDto> SubNaturezas { get; set; } = new();
+        public List<NaturezaDTO> SubNaturezas { get; set; } = new();
     }
 
-    public class CreateNaturezaDto
+    public class CreateNaturezaDTO
     {
         public string Nome { get; set; }
         public string CodigoNatureza { get; set; }
