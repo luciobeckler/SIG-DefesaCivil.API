@@ -15,6 +15,7 @@ namespace SIG_DefesaCivil.API.Context
         public DbSet<Natureza> Natureza { get; set; }
         public DbSet<Evento> Eventos { get; set; }
         public DbSet<EventoHistorico> EventosHistoricos { get; set; }
+        public DbSet<Anexo> Anexos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,10 +68,23 @@ namespace SIG_DefesaCivil.API.Context
                 .HasForeignKey(h => h.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Anexo>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.NomeOriginal).IsRequired();
+                entity.Property(a => a.UrlArmazenamento).IsRequired();
+                entity.Property(a => a.IdArquivoExterno).IsRequired();
+                entity.Property(a => a.EntidadeId).IsRequired();
+                entity.Property(a => a.TipoEntidade).IsRequired();
+
+                entity.HasIndex(a => new { a.EntidadeId, a.TipoEntidade });
+            });
+
             // === Nomes das tabelas (opcional, para padronizar) ===
             modelBuilder.Entity<Evento>().ToTable("Eventos");
             modelBuilder.Entity<Natureza>().ToTable("Naturezas");
             modelBuilder.Entity<EventoHistorico>().ToTable("EventosHistoricos");
+            modelBuilder.Entity<Anexo>().ToTable("Anexos");
         }
     }
 }

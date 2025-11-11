@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
@@ -55,6 +56,7 @@ namespace SIG_DefesaCivil.API.Controllers
             {
                 var usuario = await GetUsuarioAtual();
                 var eventoDto = await _service.DetalhesEventosPorId(id, usuario);
+                eventoDto.Anexos = await _service.GetAnexosDTOByEventoIdAsync(id);
 
                 return Ok(eventoDto);
             }
@@ -69,36 +71,58 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpPost]
+        [Consumes("multipart/form-data")] // Especifica o tipo de conteúdo esperado
         [ProducesResponseType(typeof(EventoDetalhesDTO), 201)]
-        [ProducesResponseType(400)] 
+        [ProducesResponseType(400)]
         [ProducesResponseType(409)]
-        public async Task<IActionResult> Create([FromBody] CreateOrEditEventoDTO dto)
+        public async Task<IActionResult> Create(
+        [FromForm] CreateOrEditEventoDTO dto,         // 1. [FromForm] para o DTO
+        [FromForm(Name = "anexos")] List<IFormFile>? anexos // 2. [FromForm] para os arquivos
+    )
         {
             try
             {
                 var usuario = await GetUsuarioAtual();
-                var eventoEntity = await _service.CriarAsync(dto, usuario);
+
+                // 3. Passe o DTO e os arquivos para o serviço
+                var eventoEntity = await _service.CriarAsync(dto, anexos, usuario);
+
+                // 4. Mapeie para o DTO de *detalhes* para a resposta
                 var eventoDto = _mapper.Map<EventoDetalhesDTO>(eventoEntity);
 
-                return CreatedAtAction(nameof(GetDetalhesById), new { id = eventoDto.Id }, eventoDto);
+                // 5. Adicione os anexos recém-criados ao DTO de resposta
+                //    (Opcional, mas bom para o front-end ter os IDs e URLs imediatamente)
+                eventoDto.Anexos = await _service.GetAnexosDTOByEventoIdAsync(eventoEntity.Id);
+
+                return CreatedAtAction(nameof(GetDetalhesById), new { id = eventoEntity.Id }, eventoDto);
             }
-            catch (InvalidOperationException ex)
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); } // Erros de validação (ex: arquivo)
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // Regras de negócio
+            catch (Exception ex)
             {
-                return Conflict(new { message = ex.Message });
+                // Log ex
+                return StatusCode(500, "Ocorreu um erro interno ao processar a solicitação.");
             }
         }
 
         [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
         [ProducesResponseType(409)]
-        public async Task<IActionResult> Update(string id, [FromBody] CreateOrEditEventoDTO dto)
+        public async Task<IActionResult> Update(
+            string id,
+            [FromForm] CreateOrEditEventoDTO dto,
+            [FromForm(Name = "anexos")] List<IFormFile>? anexosNovos,
+            [FromForm] List<string>? anexosParaRemoverIds
+        )
         {
             try
             {
                 var usuario = await GetUsuarioAtual();
-                await _service.AtualizarAsync(id, dto, usuario);
+                await _service.AtualizarAsync(id, dto, anexosNovos, anexosParaRemoverIds, usuario);
+
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -108,10 +132,20 @@ namespace SIG_DefesaCivil.API.Controllers
                 else
                     return Conflict(new { message = ex.Message });
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException ex) { return StatusCode(403, new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
             {
-                return StatusCode(403, new { message = ex.Message });
+                return StatusCode(500, "Ocorreu um erro interno ao processar a solicitação.");
             }
+        }
+
+        [HttpGet("{id}/anexos")]
+        [ProducesResponseType(typeof(IEnumerable<AnexoDTO>), 200)]
+        public async Task<IActionResult> GetAnexos(string id)
+        {
+            var anexos = await _service.GetAnexosDTOByEventoIdAsync(id);
+            return Ok(anexos);
         }
 
         [HttpDelete("{id}")]
@@ -153,8 +187,8 @@ namespace SIG_DefesaCivil.API.Controllers
             return Ok(historicoDTO);
         }
 
-        [HttpGet("status")] 
-        [AllowAnonymous] 
+        [HttpGet("status")]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(IEnumerable<object>), 200)]
         public IActionResult GetStatusOptions()
         {

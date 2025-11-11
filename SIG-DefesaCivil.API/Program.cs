@@ -36,6 +36,8 @@ builder.Services.AddDbContext<DefesaCivilDbContext>(options =>
 // Registrando services
 builder.Services.AddScoped<NaturezaService>();
 builder.Services.AddScoped<EventoService>();
+builder.Services.AddScoped<AnexoService>();
+builder.Services.AddSingleton<GoogleDriveService>(); 
 
 //Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>

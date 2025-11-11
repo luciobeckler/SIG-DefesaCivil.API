@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
+using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.DTOs;
 using SIG_DefesaCivil.API.Enums;
@@ -13,13 +15,13 @@ namespace SIG_DefesaCivil.API.Services
     {
         private readonly DefesaCivilDbContext _context;
         private readonly IMapper _mapper;
-        private readonly NaturezaService _naturezaService;
+        private readonly AnexoService _anexoService;
 
-        public EventoService(DefesaCivilDbContext context, IMapper mapper, NaturezaService naturezaService)
+        public EventoService(DefesaCivilDbContext context, IMapper mapper, AnexoService anexoService)
         {
             _context = context;
             _mapper = mapper;
-            _naturezaService = naturezaService;
+            _anexoService = anexoService;
         }
         public async Task<IEnumerable<EventoPreviewDTO>> ListarPreviewEventosAsync()
         {
@@ -42,47 +44,71 @@ namespace SIG_DefesaCivil.API.Services
             string acao = "Visualizou detalhes";
             AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
 
+            // Busca os anexos genéricos associados a este evento
+            var anexos = await _context.Anexos
+                .Where(a => a.EntidadeId == evento.Id && a.TipoEntidade == "Evento")
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Mapeia o evento principal
             var eventoDto = _mapper.Map<EventoDetalhesDTO>(evento);
 
-            await _context.SaveChangesAsync();
+            // Mapeia e atribui os anexos
+            eventoDto.Anexos = _mapper.Map<ICollection<AnexoDTO>>(anexos);
+
+            await _context.SaveChangesAsync(); // Salva o histórico
             return eventoDto;
         }
 
-        public async Task<Evento> CriarAsync(CreateOrEditEventoDTO dto, Usuario usuario)
+        public async Task<Evento> CriarAsync(CreateOrEditEventoDTO dto, List<IFormFile>? anexos, Usuario usuario)
         {
+            // --- 1. Validações ---
             await ValidarCodigoUnicoAsync(dto.Codigo);
             ValidarHierarquiaUnica(dto);
             await ValidarEventoPaiAsync(dto.EventoPaiId);
             var statusEnum = ParseAndValidateStatus(dto.Status);
             var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
-            var evento = new Evento
-            {
-                Id = Guid.NewGuid().ToString(),
-                Codigo = dto.Codigo,
-                Titulo = dto.Titulo,
-                Descricao = dto.Descricao,
-                Endereco = dto.Endereco,
-                Status = ParseAndValidateStatus(dto.Status),
-                Naturezas = naturezas,
-                DataEHoraDoEvento = dto.DataEHoraDoEvento,
-                UsuarioCriadorId = usuario.Id,
-                EventoPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId,
-            };
+            // --- 2. Mapeamento e Criação ---
+            var evento = _mapper.Map<Evento>(dto); // Mapeia campos simples
+
+            // Define propriedades gerenciadas manualmente
+            evento.Id = Guid.NewGuid().ToString();
+            evento.UsuarioCriadorId = usuario.Id;
+            evento.Status = statusEnum;
+            evento.EventoPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId;
+            evento.Naturezas = naturezas;
+            evento.isVisible = true; // Valor padrão definido na entidade
+
             await AssociaSubEventosNaCriacao(evento, dto);
 
+            // --- 3. Salva o Evento Principal ---
             _context.Eventos.Add(evento);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Salva o evento para que ele tenha um ID
+
+            // --- 4. Salva Anexos (agora que o evento.Id existe) ---
+            if (anexos != null && anexos.Any())
+            {
+                foreach (var arquivo in anexos)
+                {
+                    // Delega para o AnexoService, que salva no Drive e no DB
+                    await _anexoService.SalvarAnexoAsync(arquivo, evento.Id, "Evento");
+                }
+                await _context.SaveChangesAsync(); // Salva os anexos
+            }
+
             return evento;
         }
 
-        public async Task AtualizarAsync(string id, CreateOrEditEventoDTO dto, Usuario usuario)
+        public async Task AtualizarAsync(string id, CreateOrEditEventoDTO dto, List<IFormFile>? anexosNovos, List<string>? anexosParaRemoverIds, Usuario usuario)
         {
+            // --- 1. Validações ---
             await ValidarCodigoUnicoAsync(dto.Codigo, id);
             ValidarHierarquiaUnica(dto);
             var statusEnum = ParseAndValidateStatus(dto.Status);
-            var naturezasParaAssociar = await ValidarEBuscarNaturezasAsync(dto.NaturezasId); // This returns ICollection<Natureza>
+            var naturezasParaAssociar = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
+            // --- 2. Busca da Entidade ---
             var evento = await RecuperaEventoCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(evento.UsuarioCriadorId, usuario);
 
@@ -91,17 +117,42 @@ namespace SIG_DefesaCivil.API.Services
                 throw new InvalidOperationException("Um evento não pode ser definido como seu próprio evento pai.");
             }
 
-            _mapper.Map(dto, evento);
-            var naturezasDtoParaPassar = _mapper.Map<ICollection<NaturezaDTO>>(naturezasParaAssociar);
-            evento.Status = statusEnum;
-            
+            // --- 3. Mapeamento e Atualização de Relações ---
+            _mapper.Map(dto, evento); // Atualiza campos simples (Titulo, Descricao, etc.)
+            evento.Status = statusEnum; // Atualiza status manualmente
+
             await AtualizaEventoPaiAsync(evento, dto);
             await AtualizaRelacionamentoSubEventosAsync(evento, dto);
-            await AtualizaRelacionamentoNaturezasAsync(evento, naturezasDtoParaPassar);
 
+            // CORRIGIDO: Passa a coleção de ENTIDADES, não de DTOs
+            await AtualizaRelacionamentoNaturezasAsync(evento, naturezasParaAssociar);
+
+            // --- 4. Gerenciamento de Anexos ---
+            // Remover anexos
+            if (anexosParaRemoverIds != null && anexosParaRemoverIds.Any())
+            {
+                foreach (var anexoId in anexosParaRemoverIds)
+                {
+                    // Verifica se o anexo pertence a este evento antes de excluir
+                    var anexo = await _context.Anexos.FirstOrDefaultAsync(a => a.Id == anexoId && a.EntidadeId == evento.Id && a.TipoEntidade == "Evento");
+                    if (anexo != null)
+                    {
+                        await _anexoService.ExcluirAnexoAsync(anexo.Id);
+                    }
+                }
+            }
+            // Adicionar novos anexos
+            if (anexosNovos != null && anexosNovos.Any())
+            {
+                foreach (var arquivo in anexosNovos)
+                {
+                    await _anexoService.SalvarAnexoAsync(arquivo, evento.Id, "Evento");
+                }
+            }
+
+            // --- 5. Salvar ---
             var acao = "Editou evento";
             AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
-
             await _context.SaveChangesAsync();
         }
 
@@ -120,12 +171,16 @@ namespace SIG_DefesaCivil.API.Services
             if (!podeDeletar)
                 throw new UnauthorizedAccessException("Você não tem permissão para excluir eventos.");
 
-            if (evento.SubEventos != null && evento.SubEventos.Any())
+            if (evento.SubEventos != null && evento.SubEventos.Any(se => se.isVisible))
             {
-                throw new InvalidOperationException("Não é possível excluir este evento pois ele possui sub-eventos associados. Remova ou reatribua os sub-eventos primeiro.");
+                throw new InvalidOperationException("Não é possível excluir este evento pois ele possui sub-eventos visíveis associados. Remova ou reatribua os sub-eventos primeiro.");
             }
 
+            // Soft Delete
             evento.isVisible = false;
+            var acao = "Deletou evento";
+            AdicionaOuAtualizaHistorico(evento.Id, usuario.Id, acao);
+
             await _context.SaveChangesAsync();
         }
 
@@ -139,18 +194,20 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderByDescending(h => h.UltimaAlteracao)
                 .ToListAsync();
         }
+        public async Task<ICollection<AnexoDTO>> GetAnexosDTOByEventoIdAsync(string eventoId)
+        {
+            var anexos = await _context.Anexos
+                .Where(a => a.EntidadeId == eventoId && a.TipoEntidade == "Evento")
+                .AsNoTracking()
+                .ToListAsync();
+
+            return _mapper.Map<ICollection<AnexoDTO>>(anexos);
+        }
 
         private async Task AtualizaEventoPaiAsync(Evento eventoParaAtualizar, CreateOrEditEventoDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.EventoPaiId))
-            {
-                eventoParaAtualizar.EventoPaiId = null;
-            }
-            else
-            {
-                await RecuperaEventoCompletoPorId(dto.EventoPaiId);
-                eventoParaAtualizar.EventoPaiId = dto.EventoPaiId;
-            }
+            await ValidarEventoPaiAsync(dto.EventoPaiId);
+            eventoParaAtualizar.EventoPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId;
         }
 
         private async Task AtualizaRelacionamentoSubEventosAsync(Evento eventoParaAtualizar, CreateOrEditEventoDTO dto)
@@ -263,8 +320,8 @@ namespace SIG_DefesaCivil.API.Services
         {
             var evento = await _context.Eventos
                 .Include(e => e.UsuarioCriador)
-                .Include(e => e.EventoPai)
-                .Include(e => e.SubEventos)
+                .Include(e => e.EventoPai).ThenInclude(p => p.UsuarioCriador)
+                .Include(e => e.SubEventos).ThenInclude(s => s.UsuarioCriador)
                 .Include(e => e.Naturezas)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
@@ -353,43 +410,27 @@ namespace SIG_DefesaCivil.API.Services
             return naturezas;
         }
 
-        private async Task AtualizaRelacionamentoNaturezasAsync(Evento eventoParaAtualizar, ICollection<NaturezaDTO> naturezasNoDto)
+        private async Task AtualizaRelacionamentoNaturezasAsync(Evento eventoParaAtualizar, ICollection<Natureza> naturezasParaAssociar)
         {
             await _context.Entry(eventoParaAtualizar)
                 .Collection(e => e.Naturezas)
                 .LoadAsync();
 
             var naturezasAtuais = eventoParaAtualizar.Naturezas ?? new List<Natureza>();
-            var naturezasDtoIds = naturezasNoDto?.Select(n => n.Id).ToHashSet() ?? new HashSet<string>();
-            var naturezasParaRemover = naturezasAtuais.Where(n => !naturezasDtoIds.Contains(n.Id)).ToList();
+            var naturezasDtoIds = naturezasParaAssociar.Select(n => n.Id).ToHashSet();
 
+            var naturezasParaRemover = naturezasAtuais.Where(n => !naturezasDtoIds.Contains(n.Id)).ToList();
             foreach (var nat in naturezasParaRemover)
             {
                 naturezasAtuais.Remove(nat);
             }
 
             var naturezasAtuaisIds = naturezasAtuais.Select(n => n.Id).ToHashSet();
-            var idsParaAdicionar = naturezasDtoIds.Where(id => !naturezasAtuaisIds.Contains(id)).ToList();
-
-            if (idsParaAdicionar.Any())
+            var naturezasParaAdicionar = naturezasParaAssociar.Where(n => !naturezasAtuaisIds.Contains(n.Id)).ToList();
+            foreach (var nat in naturezasParaAdicionar)
             {
-                var naturezasEntidadesParaAdicionar = await _context.Natureza
-                    .Where(n => idsParaAdicionar.Contains(n.Id))
-                    .ToListAsync();
-
-                if (naturezasEntidadesParaAdicionar.Count != idsParaAdicionar.Count)
-                {
-                    var idsEncontrados = naturezasEntidadesParaAdicionar.Select(n => n.Id).ToHashSet();
-                    var idsNaoEncontrados = idsParaAdicionar.Where(id => !idsEncontrados.Contains(id));
-                    throw new InvalidOperationException($"As seguintes IDs de naturezas não foram encontradas ao tentar adicioná-las: {string.Join(", ", idsNaoEncontrados)}");
-                }
-
-                foreach (var natEntidade in naturezasEntidadesParaAdicionar)
-                {
-                    naturezasAtuais.Add(natEntidade);
-                }
+                naturezasAtuais.Add(nat);
             }
-            eventoParaAtualizar.Naturezas = naturezasAtuais;
         }
         private async Task ValidarEventoPaiAsync(string? eventoPaiId)
         {

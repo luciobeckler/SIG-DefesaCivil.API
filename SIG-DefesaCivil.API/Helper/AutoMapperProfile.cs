@@ -1,5 +1,6 @@
 ﻿// SIG_DefesaCivil.API/Helper/AutoMapperProfile.cs
 using AutoMapper;
+using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos; // Ajuste este namespace se necessário
 using SIG_DefesaCivil.API.DTOs; // Assume que NaturezaDTO e CreateNaturezaDTO estão aqui
 using SIG_DefesaCivil.API.Models;
@@ -29,9 +30,12 @@ namespace SIG_DefesaCivil.API.Helper
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             CreateMap<Evento, EventoDetalhesDTO>()
-                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString())) 
-                 .ForMember(dest => dest.EventoPai, opt => opt.MapFrom(src => src.EventoPai)); 
-
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.UsuarioCriador, opt => opt.MapFrom(src => src.UsuarioCriador))
+                .ForMember(dest => dest.SubEventos, opt => opt.MapFrom(src => src.SubEventos))
+                .ForMember(dest => dest.EventoPai, opt => opt.MapFrom(src => src.EventoPai))
+                .ForMember(dest => dest.Naturezas, opt => opt.MapFrom(src => src.Naturezas))
+                .ForMember(dest => dest.Anexos, opt => opt.Ignore());
 
             // ==== Usuários (Para EventoDetalhesDTO) ====
             CreateMap<Usuario, EventoDetalhesUsuarioDTO>()
@@ -41,6 +45,9 @@ namespace SIG_DefesaCivil.API.Helper
             CreateMap<Natureza, NaturezaResumoDTO>(); 
             CreateMap<Natureza, NaturezaDTO>();
             CreateMap<CreateNaturezaDTO, Natureza>();
+
+            // ==== Anexos ====
+            CreateMap<Anexo, AnexoDTO>();
         }
     }
 }

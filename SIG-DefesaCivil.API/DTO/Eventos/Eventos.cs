@@ -35,6 +35,7 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
             public EventoDetalhesUsuarioDTO UsuarioCriador { get; set; }
             public ICollection<EventoPreviewDTO> SubEventos { get; set; }
             public ICollection<NaturezaResumoDTO> Naturezas { get; set; }
+            public ICollection<AnexoDTO> Anexos { get; set; } 
             public bool isVisible { get; set; }
         }
         public class EventoPreviewDTO
