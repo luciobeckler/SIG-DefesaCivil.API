@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Context;
 
@@ -11,9 +12,11 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251113121359_Removendo obrigatoriedade de um stage em um frame")]
+    partial class Removendoobrigatoriedadedeumstageemumframe
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

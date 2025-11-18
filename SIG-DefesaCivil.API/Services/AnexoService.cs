@@ -14,7 +14,7 @@ public class AnexoService
         _context = context;
     }
 
-    public async Task<Anexo> SalvarAnexoAsync(IFormFile arquivo, string entidadeId, string tipoEntidade)
+    public async Task<SIG_DefesaCivil.API.Models.Anexo> SalvarAnexoAsync(IFormFile arquivo, string entidadeId, string tipoEntidade)
     {
         // 1. Validações (tamanho, tipo, etc. - como antes)
         // ... (if arquivo.Length > MaxFileSize...) ...
@@ -24,7 +24,7 @@ public class AnexoService
         // 2. Salva no Google Drive
         var uploadResult = await _googleDriveService.UploadFileAsync(arquivo);
 
-        var anexo = new Anexo
+        var anexo = new SIG_DefesaCivil.API.Models.Anexo
         {
             NomeOriginal = arquivo.FileName,
             UrlArmazenamento = uploadResult.WebViewLink,

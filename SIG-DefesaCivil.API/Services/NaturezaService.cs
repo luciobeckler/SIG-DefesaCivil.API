@@ -20,7 +20,7 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task<List<NaturezaDTO>> GetAllAsync()
         {
-            var todasNaturezas = await _context.Natureza
+            var todasNaturezas = await _context.Naturezas
                 .Include(n => n.SubNaturezas)
                 .ToListAsync();
 
@@ -38,15 +38,6 @@ namespace SIG_DefesaCivil.API.Services
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
             
-            return _mapper.Map<NaturezaDTO>(natureza);
-        }
-
-        public async Task<NaturezaDTO> GetByIdAsync(string id)
-        {
-            var natureza = await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
-            if (natureza is null)
-                throw new ArgumentException("Natureza não encontrada");
-
             return _mapper.Map<NaturezaDTO>(natureza);
         }
 
@@ -69,7 +60,7 @@ namespace SIG_DefesaCivil.API.Services
             natureza.Id = Guid.NewGuid().ToString();
             natureza.NaturezaPaiId = naturezaPaiId;
 
-            _context.Natureza.Add(natureza);
+            _context.Naturezas.Add(natureza);
             await _context.SaveChangesAsync();
 
             return _mapper.Map<NaturezaDTO>(natureza);
@@ -80,7 +71,7 @@ namespace SIG_DefesaCivil.API.Services
             var natureza = await ObterNaturezaPorId(id);
             if (natureza is null) return false;
 
-            var codigoEmUso = await _context.Natureza
+            var codigoEmUso = await _context.Naturezas
                 .AnyAsync(n => n.CodigoNatureza == dto.CodigoNatureza && n.Id != id);
 
             if (codigoEmUso)
@@ -108,14 +99,14 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task<bool> DeleteAsync(string codigo)
         {
-            var natureza = await _context.Natureza
+            var natureza = await _context.Naturezas
                 .Include(n => n.SubNaturezas)
                 .FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
 
             if (natureza is null) return false;
 
             await RemoverSubNaturezasRecursivamente(natureza);
-            _context.Natureza.Remove(natureza);
+            _context.Naturezas.Remove(natureza);
 
             await _context.SaveChangesAsync();
             return true;
@@ -127,7 +118,7 @@ namespace SIG_DefesaCivil.API.Services
             if (natureza is null) 
                 return new List<NaturezaDTO>();
 
-            var irmas = await _context.Natureza
+            var irmas = await _context.Naturezas
                 .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != natureza.Id)
                 .ToListAsync();
 
@@ -136,7 +127,7 @@ namespace SIG_DefesaCivil.API.Services
 
         private async Task ValidarCodigoDuplicado(string codigo)
         {
-            var duplicado = await _context.Natureza
+            var duplicado = await _context.Naturezas
                 .AnyAsync(n => n.CodigoNatureza == codigo);
 
             if (duplicado)
@@ -144,10 +135,10 @@ namespace SIG_DefesaCivil.API.Services
         }
 
         private async Task<Natureza?> ObterNaturezaPorId(string id) =>
-            await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
+            await _context.Naturezas.FirstOrDefaultAsync(n => n.Id == id);
 
         private async Task<Natureza?> ObterNaturezaPorCodigo(string codigo) =>
-            await _context.Natureza.FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
+            await _context.Naturezas.FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
 
         private async Task RemoverSubNaturezasRecursivamente(Natureza n)
         {
@@ -155,14 +146,14 @@ namespace SIG_DefesaCivil.API.Services
 
             foreach (var sub in n.SubNaturezas.ToList())
             {
-                var subCompleta = await _context.Natureza
+                var subCompleta = await _context.Naturezas
                     .Include(x => x.SubNaturezas)
                     .FirstOrDefaultAsync(x => x.CodigoNatureza == sub.CodigoNatureza);
 
                 if (subCompleta is null) continue;
 
                 await RemoverSubNaturezasRecursivamente(subCompleta);
-                _context.Natureza.Remove(subCompleta);
+                _context.Naturezas.Remove(subCompleta);
             }
         }
     }

@@ -1,13 +1,14 @@
 ﻿using SIG_DefesaCivil.API.DTOs;
-using SIG_DefesaCivil.API.Enums;
-using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Eventos;
+using System.ComponentModel.DataAnnotations;
 
 namespace SIG_DefesaCivil.API.DTO.Eventos
 {
 
-    namespace SIG_DefesaCivil.API.DTO.Eventos
+    namespace SIG_DefesaCivil.API.DTO.EventoDTO
     {
+        /// <summary>
+        /// Classe base com os dados essenciais de um evento.
+        /// </summary>
         public abstract class EventoDadosBaseDTO
         {
             public string Codigo { get; set; }
@@ -17,36 +18,49 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
             public DateTime DataEHoraDoEvento { get; set; }
         }
 
-        public class CreateOrEditEventoDTO : EventoDadosBaseDTO
+        public class CreateEventoDTO : EventoDadosBaseDTO
         {
-
-            public string Status { get; set; }
+            [Required]
+            public string StageId { get; set; } 
 
             public string? EventoPaiId { get; set; }
             public ICollection<string>? SubEventosId { get; set; }
             public ICollection<string>? NaturezasId { get; set; }
         }
-        public class EventoDetalhesDTO : EventoDadosBaseDTO
-        {
-            public string Id { get; set; }
-            public EStatusEvento Status { get; set; }
 
-            public EventoPreviewDTO EventoPai { get; set; }
-            public EventoDetalhesUsuarioDTO UsuarioCriador { get; set; }
-            public ICollection<EventoPreviewDTO> SubEventos { get; set; }
-            public ICollection<NaturezaResumoDTO> Naturezas { get; set; }
-            public ICollection<AnexoDTO> Anexos { get; set; } 
+        public class UpdateEventoDTO : EventoDadosBaseDTO
+        {
+            public string? EventoPaiId { get; set; }
+            public ICollection<string>? SubEventosId { get; set; }
+            public ICollection<string>? NaturezasId { get; set; }
+
             public bool isVisible { get; set; }
         }
+
         public class EventoPreviewDTO
         {
             public string Id { get; set; }
             public string Codigo { get; set; }
             public string Titulo { get; set; }
-            public EStatusEvento Status { get; set; }
-            public string EmailResponsavel { get; set; }
-            public ICollection<NaturezaResumoDTO> Naturezas { get; set; }
             public bool isVisible { get; set; }
+            public string EmailResponsavel { get; set; }
+
+            public string StageId { get; set; }
+            public ICollection<NaturezaResumoDTO> Naturezas { get; set; }
+        }
+
+        public class EventoDetalhesDTO : EventoDadosBaseDTO
+        {
+            public string Id { get; set; }
+            public bool isVisible { get; set; }
+            public string StageId { get; set; }
+
+            // --- RELACIONAMENTOS ---
+            public EventoPreviewDTO? EventoPai { get; set; }
+            public EventoDetalhesUsuarioDTO UsuarioCriador { get; set; }
+            public ICollection<EventoPreviewDTO> SubEventos { get; set; }
+            public ICollection<NaturezaResumoDTO> Naturezas { get; set; }
+            public ICollection<AnexoDTO> Anexos { get; set; }
         }
 
         public class EventoDetalhesUsuarioDTO

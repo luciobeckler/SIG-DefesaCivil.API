@@ -26,5 +26,9 @@ namespace SIG_DefesaCivil.API.Models.Eventos
 
         // N-N com eventos
         public ICollection<Natureza> Naturezas { get; set; }
+
+        // 1-N com stages
+        public string StageId { get; set; }
+        public Stage Stage { get; set; }
     }
 }

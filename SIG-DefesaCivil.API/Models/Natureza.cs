@@ -16,6 +16,7 @@ namespace SIG_DefesaCivil.API.Models
         public ICollection<Natureza>? SubNaturezas { get; set; }
 
         // N-N com eventos
-        public ICollection<Evento> Eventos { get; set; }
+        public ICollection<Evento> Eventos { get; set; } //Consertar depois, não acho que seja N-N e sim N-1
+
     }
 }
