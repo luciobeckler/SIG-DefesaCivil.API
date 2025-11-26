@@ -1,10 +1,8 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
-using SIG_DefesaCivil.API.DTOs;
+using SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
@@ -22,18 +20,6 @@ namespace SIG_DefesaCivil.API.Services
             _context = context;
             _mapper = mapper;
             _anexoService = anexoService;
-        }
-        public async Task<IEnumerable<EventoPreviewDTO>> ListarPreviewEventosAsync()
-        {
-            var allEventos = await _context.Eventos
-                .Where(e => e.isVisible == true)
-                .Include(e => e.UsuarioCriador)
-                .Include(e => e.Naturezas) 
-                .AsNoTracking()
-                .ToListAsync();
-
-
-            return _mapper.Map<IEnumerable<EventoPreviewDTO>>(allEventos);
         }
 
         public async Task<EventoDetalhesDTO> DetalhesEventosPorId(string id, Usuario usuario)
@@ -75,7 +61,6 @@ namespace SIG_DefesaCivil.API.Services
             // Define propriedades gerenciadas manualmente
             evento.Id = Guid.NewGuid().ToString();
             evento.UsuarioCriadorId = usuario.Id;
-            evento.Status = statusEnum;
             evento.EventoPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId;
             evento.Naturezas = naturezas;
             evento.isVisible = true; // Valor padrão definido na entidade
@@ -119,7 +104,6 @@ namespace SIG_DefesaCivil.API.Services
 
             // --- 3. Mapeamento e Atualização de Relações ---
             _mapper.Map(dto, evento); // Atualiza campos simples (Titulo, Descricao, etc.)
-            evento.Status = statusEnum; // Atualiza status manualmente
 
             await AtualizaEventoPaiAsync(evento, dto);
             await AtualizaRelacionamentoSubEventosAsync(evento, dto);

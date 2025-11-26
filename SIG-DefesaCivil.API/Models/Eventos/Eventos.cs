@@ -11,7 +11,6 @@ namespace SIG_DefesaCivil.API.Models.Eventos
         public string Titulo { get; set; }
         public string Descricao { get; set; }
         public string Endereco { get; set; }
-        public EStatusEvento Status { get; set; }
         public DateTime DataEHoraDoEvento { get; set; }
         public bool isVisible { get; set; } = true;
 
@@ -26,5 +25,9 @@ namespace SIG_DefesaCivil.API.Models.Eventos
 
         // N-N com eventos
         public ICollection<Natureza> Naturezas { get; set; }
+
+        // N - 1 com etapas
+        public string EtapaId { get; set; }
+        public Etapa Etapa { get; set; }
     }
 }

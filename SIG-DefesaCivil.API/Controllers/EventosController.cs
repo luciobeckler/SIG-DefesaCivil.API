@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos;
-using SIG_DefesaCivil.API.DTO.Eventos.SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
@@ -36,14 +35,6 @@ namespace SIG_DefesaCivil.API.Controllers
                 throw new UnauthorizedAccessException("Usuário não encontrado no token.");
             }
             return await _userManager.FindByIdAsync(userId);
-        }
-
-        [HttpGet("getAllPreview")]
-        [ProducesResponseType(typeof(IEnumerable<EventoPreviewDTO>), 200)]
-        public async Task<IActionResult> GetAllPreview()
-        {
-            var eventos = await _service.ListarPreviewEventosAsync();
-            return Ok(eventos);
         }
 
         [HttpGet("{id}/detalhes")]

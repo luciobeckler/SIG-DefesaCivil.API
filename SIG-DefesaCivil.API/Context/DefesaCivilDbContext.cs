@@ -16,6 +16,9 @@ namespace SIG_DefesaCivil.API.Context
         public DbSet<Evento> Eventos { get; set; }
         public DbSet<EventoHistorico> EventosHistoricos { get; set; }
         public DbSet<Anexo> Anexos { get; set; }
+        public DbSet<Quadro> Quadros { get; set; }
+        public DbSet<Etapa> Etapas { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,12 +43,6 @@ namespace SIG_DefesaCivil.API.Context
                 .HasMany(e => e.Naturezas)     
                 .WithMany(n => n.Eventos)       
                 .UsingEntity(j => j.ToTable("EventoNaturezas"));
-
-            // === Enum de status ===
-            modelBuilder.Entity<Evento>()
-                .Property(e => e.Status)
-                .HasConversion<string>()
-                .HasMaxLength(50);
 
             // === Relacionamento Evento ↔ Usuário ===
             modelBuilder.Entity<Evento>()
@@ -78,6 +75,29 @@ namespace SIG_DefesaCivil.API.Context
                 entity.Property(a => a.TipoEntidade).IsRequired();
 
                 entity.HasIndex(a => new { a.EntidadeId, a.TipoEntidade });
+
+                // === Frame (Quadro) ===
+                modelBuilder.Entity<Etapa>(entity =>
+                {
+                    entity.HasKey(e => e.Id);
+                    entity.Property(e => e.Nome).IsRequired().HasMaxLength(100);
+                    // Relação 1-N: Frame -> Stages
+                    entity.HasOne(e => e.Quadro)
+                          .WithMany(q => q.Etapas)
+                          .HasForeignKey(s => s.QuadroId)
+                          .OnDelete(DeleteBehavior.Cascade); // Deletar Quadro -> Deleta Stages
+                });
+
+                // === Stage (Etapa) ===
+                modelBuilder.Entity<Etapa>(entity =>
+                {
+                    entity.HasKey(s => s.Id);
+                    entity.Property(s => s.Nome).IsRequired().HasMaxLength(100);
+                    entity.HasMany(s => s.Eventos)
+                          .WithOne(e => e.Etapa)
+                          .HasForeignKey(e => e.EtapaId)
+                          .OnDelete(DeleteBehavior.Restrict); // Proteção: Não deletar Etapa se tiver Eventos nela
+                });
             });
 
             // === Nomes das tabelas (opcional, para padronizar) ===
@@ -85,6 +105,10 @@ namespace SIG_DefesaCivil.API.Context
             modelBuilder.Entity<Natureza>().ToTable("Naturezas");
             modelBuilder.Entity<EventoHistorico>().ToTable("EventosHistoricos");
             modelBuilder.Entity<Anexo>().ToTable("Anexos");
+            modelBuilder.Entity<Quadro>().ToTable("Quadros");
+            modelBuilder.Entity<Etapa>().ToTable("Etapas");
+
+
         }
     }
 }
