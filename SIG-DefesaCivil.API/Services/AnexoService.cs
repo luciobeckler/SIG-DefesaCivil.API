@@ -1,5 +1,7 @@
-﻿using SIG_DefesaCivil.API.Context;
+﻿using Microsoft.EntityFrameworkCore;
+using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Models.Eventos;
 using SIG_DefesaCivil.API.Services;
 
 public class AnexoService
@@ -14,39 +16,61 @@ public class AnexoService
         _context = context;
     }
 
-    public async Task<Anexo> SalvarAnexoAsync(IFormFile arquivo, string entidadeId, string tipoEntidade)
+    public async Task<List<IFormFile>?> SalvarAnexoAsync(List<IFormFile> arquivos, string entidadeId, string tipoEntidade)
     {
-        // 1. Validações (tamanho, tipo, etc. - como antes)
-        // ... (if arquivo.Length > MaxFileSize...) ...
-        if (arquivo.Length > MaxFileSize)
-            throw new ArgumentException("O arquivo excede o tamanho máximo permitido");
-
-        // 2. Salva no Google Drive
-        var uploadResult = await _googleDriveService.UploadFileAsync(arquivo);
-
-        var anexo = new Anexo
+        if (arquivos != null && arquivos.Any())
         {
-            NomeOriginal = arquivo.FileName,
-            UrlArmazenamento = uploadResult.WebViewLink,
-            IdArquivoExterno = uploadResult.FileId,
-            TipoConteudo = arquivo.ContentType,
-            TamanhoBytes = arquivo.Length,
-            EntidadeId = entidadeId, 
-            TipoEntidade = tipoEntidade
-        };
+            foreach (var arquivo in arquivos)
+            {
+                if (arquivo.Length > MaxFileSize)
+                    throw new ArgumentException("O arquivo excede o tamanho máximo permitido");
 
-        _context.Anexos.Add(anexo);
+                var uploadResult = await _googleDriveService.UploadFileAsync(arquivo);
 
-        return anexo;
+                var anexo = new Anexo
+                {
+                    NomeOriginal = arquivo.FileName,
+                    UrlArmazenamento = uploadResult.WebViewLink,
+                    IdArquivoExterno = uploadResult.FileId,
+                    TipoConteudo = arquivo.ContentType,
+                    TamanhoBytes = arquivo.Length,
+                    EntidadeId = entidadeId,
+                    TipoEntidade = tipoEntidade
+                };
+                _context.Anexos.Add(anexo);
+            }
+        }
+        
+        return arquivos;
     }
 
-    public async Task ExcluirAnexoAsync(string anexoId)
+    public async Task RemoverAnexosAsync(string entidadeTipo, string eventoId, List<string> idsAnexosParaRemover)
     {
-        var anexo = await _context.Anexos.FindAsync(anexoId);
-        if (anexo == null) return;
+        if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any())
+            return;
 
-        await _googleDriveService.DeleteFileAsync(anexo.IdArquivoExterno);
+        var anexos = await _context.Anexos
+            .Where(a => idsAnexosParaRemover.Contains(a.Id)
+                     && a.EntidadeId == eventoId
+                     && a.TipoEntidade == entidadeTipo)
+            .ToListAsync();
 
-        _context.Anexos.Remove(anexo);
+        if (!anexos.Any())
+            return;
+
+        var tarefasDeExclusaoDrive = anexos
+            .Select(anexo => _googleDriveService.DeleteFileAsync(anexo.IdArquivoExterno));
+
+        try
+        {
+            await Task.WhenAll(tarefasDeExclusaoDrive);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Erro ao remover arquivos físicos no Drive.", ex);
+        }
+
+        _context.Anexos.RemoveRange(anexos);
+        await _context.SaveChangesAsync();
     }
 }

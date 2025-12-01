@@ -18,6 +18,6 @@ namespace SIG_DefesaCivil.API.DTO.Quadros
 
     public class QuadroDetalhesDTO : QuadroDTO
     {
-        public ICollection<Etapas.EtapaDTO> Etapas { get; set; }
+        public ICollection<Etapas.EtapaDTO> Etapas { get; set; } = new List<Etapas.EtapaDTO>();
     }
 }

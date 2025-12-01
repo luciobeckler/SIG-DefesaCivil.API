@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Etapas;
 using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Models.Eventos;
 
 namespace SIG_DefesaCivil.API.Services
 {
@@ -67,7 +67,7 @@ namespace SIG_DefesaCivil.API.Services
 
                 if (etapa != null)
                 {
-                    etapa.Posicao = i + 1; // Posição 1, 2, 3...
+                    etapa.Posicao = i; // Posição 0, 1, 2, 3...
                 }
             }
 
@@ -93,17 +93,73 @@ namespace SIG_DefesaCivil.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task TransicionaEvento(string eventoId, string etapaAtualId, string etapaDestinoId)
+        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Evento evento, string etapaId)
         {
-            verificaSeEventoExiste(eventoId);
-            verificaSeEtapaExiste(etapaAtualId);
+            var etapa = await GetEtapaById(etapaId);
+            if(etapa.Posicao != 0)
+                throw new InvalidOperationException("Só é possíve criar o evento na primeira etapa do quadro.");
 
-            verificaRegrasDeTransicao(etapaAtualId, etapaDestinoId);
+            VerificaPermissaoParaMudarParaFase(usuario, etapa);
+
+            etapa.Eventos.Add(evento);
+        }
+        
+        public async Task TransicionaEvento(Usuario usuario , Evento evento, string etapaAtualId, string etapaDestinoId)
+        {
+            var etapaAtual = await GetEtapaById(etapaAtualId);
+            var etapaDestino = await GetEtapaById(etapaDestinoId);
+
+            VerificaRegrasDeTransicao(usuario,evento,etapaAtual, etapaDestino);
+
+            etapaAtual.Eventos.Remove(evento);
+            etapaDestino.Eventos.Add(evento);
+            evento.DataEntradaNaFaseAtual = DateTime.Now;
+
+            await _context.SaveChangesAsync();
         }
 
-        private async void verificaRegrasDeTransicao(string etapaAtualId, string etapaDestinoId)
+        public async Task<Etapa> GetEtapaById(string id)
         {
+            var etapa = await _context.Etapas
+                .FirstOrDefaultAsync(e => e.Id.Equals(id));
 
+            if (etapa == null)
+            {
+                throw new KeyNotFoundException("Etapa não encontrada");
+            }
+
+            return etapa;
+        }
+
+        private void VerificaRegrasDeTransicao(Usuario usuario, Evento evento, Etapa etapaAtual, Etapa etapaDestino)
+        {
+            VerificaPermissaoParaMudarParaFase(usuario, etapaDestino);
+            VerificaEstadiaMinimaNaFase(evento, etapaAtual);
+            VerificaPossibilidadeDeTransicaoParaFase(evento, etapaAtual, etapaDestino);
+        }
+
+        private void VerificaPermissaoParaMudarParaFase(Usuario usuario, Etapa etapaDestino)
+        {
+            if (!etapaDestino.PermissoesParaTransicionarParaEstaEtapa.Contains(usuario.Cargo))
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para transicionar o evento para a fase desejada.");
+            }
+        }
+
+        private void VerificaEstadiaMinimaNaFase(Evento evento, Etapa etapaAtual)
+        {
+            if (DateTime.Now - evento.DataEntradaNaFaseAtual < etapaAtual.MinTempoNaEtapa)
+            {
+                throw new InvalidOperationException("Evento não permaneceu o tempo mínimo necessário na fase atual.");
+            }
+        }
+
+        private void VerificaPossibilidadeDeTransicaoParaFase(Evento evento, Etapa etapaAtual, Etapa etapaDestino)
+        {
+            if (etapaAtual.EtapasDestinoId != null && !etapaAtual.EtapasDestinoId.Contains(etapaDestino.Id))
+            {
+                throw new InvalidOperationException($"Não é possível transicionar da etapa {etapaAtual.Nome} para {etapaDestino.Nome}.");
+            }
         }
     }
 }

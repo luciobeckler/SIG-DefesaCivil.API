@@ -14,12 +14,32 @@ namespace SIG_DefesaCivil.API.Services
         private readonly DefesaCivilDbContext _context;
         private readonly IMapper _mapper;
         private readonly AnexoService _anexoService;
+        private readonly EtapaService _etapaService;
 
-        public EventoService(DefesaCivilDbContext context, IMapper mapper, AnexoService anexoService)
+        public EventoService(
+            DefesaCivilDbContext context, 
+            IMapper mapper, 
+            AnexoService anexoService,
+            EtapaService etapaService
+            )
         {
             _context = context;
             _mapper = mapper;
             _anexoService = anexoService;
+            _etapaService = etapaService;
+        }
+
+        public async Task<Evento> GetEventoPreviewById(string id)
+        {
+            var evento = await _context.Eventos
+                .FirstOrDefaultAsync(e => e.Id.Equals(id));
+
+            if (evento == null)
+            {
+                throw new KeyNotFoundException("Evento não encontrado");
+            }
+
+            return evento;
         }
 
         public async Task<EventoDetalhesDTO> DetalhesEventosPorId(string id, Usuario usuario)
@@ -46,7 +66,7 @@ namespace SIG_DefesaCivil.API.Services
             return eventoDto;
         }
 
-        public async Task<Evento> CriarAsync(CreateOrEditEventoDTO dto, List<IFormFile>? anexos, Usuario usuario)
+        public async Task<Evento> CriarAsync(Usuario usuario, string etapaId, CreateOrEditEventoDTO dto)
         {
             // --- 1. Validações ---
             await ValidarCodigoUnicoAsync(dto.Codigo);
@@ -69,23 +89,14 @@ namespace SIG_DefesaCivil.API.Services
 
             // --- 3. Salva o Evento Principal ---
             _context.Eventos.Add(evento);
-            await _context.SaveChangesAsync(); // Salva o evento para que ele tenha um ID
 
-            // --- 4. Salva Anexos (agora que o evento.Id existe) ---
-            if (anexos != null && anexos.Any())
-            {
-                foreach (var arquivo in anexos)
-                {
-                    // Delega para o AnexoService, que salva no Drive e no DB
-                    await _anexoService.SalvarAnexoAsync(arquivo, evento.Id, "Evento");
-                }
-                await _context.SaveChangesAsync(); // Salva os anexos
-            }
+            await _etapaService.AdicionaEventoNaPrimeiraEtapaAsync(usuario, evento, etapaId);
+            await _context.SaveChangesAsync();
 
             return evento;
         }
 
-        public async Task AtualizarAsync(string id, CreateOrEditEventoDTO dto, List<IFormFile>? anexosNovos, List<string>? anexosParaRemoverIds, Usuario usuario)
+        public async Task AtualizarAsync(string id, CreateOrEditEventoDTO dto, Usuario usuario)
         {
             // --- 1. Validações ---
             await ValidarCodigoUnicoAsync(dto.Codigo, id);
@@ -110,29 +121,6 @@ namespace SIG_DefesaCivil.API.Services
 
             // CORRIGIDO: Passa a coleção de ENTIDADES, não de DTOs
             await AtualizaRelacionamentoNaturezasAsync(evento, naturezasParaAssociar);
-
-            // --- 4. Gerenciamento de Anexos ---
-            // Remover anexos
-            if (anexosParaRemoverIds != null && anexosParaRemoverIds.Any())
-            {
-                foreach (var anexoId in anexosParaRemoverIds)
-                {
-                    // Verifica se o anexo pertence a este evento antes de excluir
-                    var anexo = await _context.Anexos.FirstOrDefaultAsync(a => a.Id == anexoId && a.EntidadeId == evento.Id && a.TipoEntidade == "Evento");
-                    if (anexo != null)
-                    {
-                        await _anexoService.ExcluirAnexoAsync(anexo.Id);
-                    }
-                }
-            }
-            // Adicionar novos anexos
-            if (anexosNovos != null && anexosNovos.Any())
-            {
-                foreach (var arquivo in anexosNovos)
-                {
-                    await _anexoService.SalvarAnexoAsync(arquivo, evento.Id, "Evento");
-                }
-            }
 
             // --- 5. Salvar ---
             var acao = "Editou evento";

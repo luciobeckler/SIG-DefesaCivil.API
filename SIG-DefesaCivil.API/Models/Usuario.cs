@@ -17,7 +17,7 @@ namespace SIG_DefesaCivil.API.Models
         public string? DataDeNascimento { get; set; }
 
         // Relacionamento com eventos: Um usuário pode ser responsável por vários eventos
-        public ICollection<Evento>? EventosCriados { get; set; }
+        public ICollection<Evento>? EventosCriados { get; set; } = new List<Evento>();
 
     }
 }

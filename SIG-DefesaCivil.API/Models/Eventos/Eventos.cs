@@ -12,6 +12,7 @@ namespace SIG_DefesaCivil.API.Models.Eventos
         public string Descricao { get; set; }
         public string Endereco { get; set; }
         public DateTime DataEHoraDoEvento { get; set; }
+        public DateTime DataEntradaNaFaseAtual { get; set; } = DateTime.Now;
         public bool isVisible { get; set; } = true;
 
         // Relacionamento com usuários
@@ -21,10 +22,10 @@ namespace SIG_DefesaCivil.API.Models.Eventos
         // Auto-relação de hierarquia
         public string? EventoPaiId { get; set; }
         public Evento? EventoPai { get; set; }
-        public ICollection<Evento>? SubEventos { get; set; }
+        public ICollection<Evento>? SubEventos { get; set; } = new List<Evento>();
 
         // N-N com eventos
-        public ICollection<Natureza> Naturezas { get; set; }
+        public ICollection<Natureza> Naturezas { get; set; } = new List<Natureza>();
 
         // N - 1 com etapas
         public string EtapaId { get; set; }

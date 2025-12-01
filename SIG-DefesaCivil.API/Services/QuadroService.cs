@@ -29,19 +29,23 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task<QuadroDetalhesDTO> ObterPorIdAsync(string id)
         {
-            // Carrega o Quadro -> Etapas (Ordenadas) -> Eventos
             var quadro = await _context.Quadros
-                .Include(q => q.Etapas.OrderBy(s => s.Posicao))
-                    .ThenInclude(e => e.Eventos) // Inclui os cartões (eventos)
-                        .ThenInclude(ev => ev.UsuarioCriador) // Para o DTO de Preview
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(q => q.Etapas)
                     .ThenInclude(e => e.Eventos)
-                        .ThenInclude(ev => ev.Naturezas) // Para as tags
-                .AsNoTracking()
+                        .ThenInclude(ev => ev.UsuarioCriador)
+                .Include(q => q.Etapas)
+                    .ThenInclude(e => e.Eventos)
+                        .ThenInclude(ev => ev.Naturezas)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
             if (quadro == null)
                 throw new KeyNotFoundException("Quadro não encontrado.");
+
+            quadro.Etapas = quadro.Etapas
+                .OrderBy(s => s.Posicao)
+                .ToList();
 
             return _mapper.Map<QuadroDetalhesDTO>(quadro);
         }

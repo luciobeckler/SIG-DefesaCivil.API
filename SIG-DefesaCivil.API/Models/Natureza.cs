@@ -13,9 +13,9 @@ namespace SIG_DefesaCivil.API.Models
         // Auto-relação de hierarquia
         public string? NaturezaPaiId { get; set; }
         public Natureza? NaturezaPai { get; set; }
-        public ICollection<Natureza>? SubNaturezas { get; set; }
+        public ICollection<Natureza>? SubNaturezas { get; set; } = new List<Natureza>();
 
         // N-N com eventos
-        public ICollection<Evento> Eventos { get; set; }
+        public ICollection<Evento> Eventos { get; set; } = new List<Evento>();
     }
 }

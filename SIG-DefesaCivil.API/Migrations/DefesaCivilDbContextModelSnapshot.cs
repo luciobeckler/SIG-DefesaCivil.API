@@ -223,11 +223,8 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<string>("EtapasDestinoId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("MaxSegundosNaEtapa")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MinSegundosNaEtapa")
-                        .HasColumnType("int");
+                    b.Property<TimeSpan?>("MinTempoNaEtapa")
+                        .HasColumnType("time");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -291,6 +288,9 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DataEHoraDoEvento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataEntradaNaFaseAtual")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Descricao")

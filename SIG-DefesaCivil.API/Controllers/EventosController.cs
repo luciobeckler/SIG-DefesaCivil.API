@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
-using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Eventos;
 using SIG_DefesaCivil.API.Services;
-using System.Security.Claims;
 
 namespace SIG_DefesaCivil.API.Controllers
 {
@@ -17,24 +14,15 @@ namespace SIG_DefesaCivil.API.Controllers
     [Authorize]
     public class EventoController : ControllerBase
     {
-        private readonly EventoService _service;
-        private readonly UserManager<Usuario> _userManager;
+        private readonly EventoService _eventoService;
+        private readonly UsuarioService _usuarioService;
         private readonly IMapper _mapper;
 
-        public EventoController(EventoService service, UserManager<Usuario> userManager, IMapper mapper)
+        public EventoController(EventoService eventoService, UsuarioService usuarioService, IMapper mapper)
         {
-            _service = service;
-            _userManager = userManager;
+            _eventoService = eventoService;
+            _usuarioService = usuarioService;
             _mapper = mapper;
-        }
-        private async Task<Usuario> GetUsuarioAtual()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new UnauthorizedAccessException("Usuário não encontrado no token.");
-            }
-            return await _userManager.FindByIdAsync(userId);
         }
 
         [HttpGet("{id}/detalhes")]
@@ -45,9 +33,9 @@ namespace SIG_DefesaCivil.API.Controllers
         {
             try
             {
-                var usuario = await GetUsuarioAtual();
-                var eventoDto = await _service.DetalhesEventosPorId(id, usuario);
-                eventoDto.Anexos = await _service.GetAnexosDTOByEventoIdAsync(id);
+                var usuario = await _usuarioService.GetUsuarioAtual(User);
+                var eventoDto = await _eventoService.DetalhesEventosPorId(id, usuario);
+                eventoDto.Anexos = await _eventoService.GetAnexosDTOByEventoIdAsync(id);
 
                 return Ok(eventoDto);
             }
@@ -62,58 +50,40 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpPost]
-        [Consumes("multipart/form-data")] // Especifica o tipo de conteúdo esperado
+        [Consumes("application/json")] 
         [ProducesResponseType(typeof(EventoDetalhesDTO), 201)]
         [ProducesResponseType(400)]
-        [ProducesResponseType(409)]
         public async Task<IActionResult> Create(
-        [FromForm] CreateOrEditEventoDTO dto,         // 1. [FromForm] para o DTO
-        [FromForm(Name = "anexos")] List<IFormFile>? anexos // 2. [FromForm] para os arquivos
-    )
+        [FromBody] CreateOrEditEventoDTO dto,
+        [FromQuery] string etapaId)
         {
             try
             {
-                var usuario = await GetUsuarioAtual();
-
-                // 3. Passe o DTO e os arquivos para o serviço
-                var eventoEntity = await _service.CriarAsync(dto, anexos, usuario);
-
-                // 4. Mapeie para o DTO de *detalhes* para a resposta
+                var usuario = await _usuarioService.GetUsuarioAtual(User);
+                var eventoEntity = await _eventoService.CriarAsync(usuario, etapaId, dto);
                 var eventoDto = _mapper.Map<EventoDetalhesDTO>(eventoEntity);
-
-                // 5. Adicione os anexos recém-criados ao DTO de resposta
-                //    (Opcional, mas bom para o front-end ter os IDs e URLs imediatamente)
-                eventoDto.Anexos = await _service.GetAnexosDTOByEventoIdAsync(eventoEntity.Id);
 
                 return CreatedAtAction(nameof(GetDetalhesById), new { id = eventoEntity.Id }, eventoDto);
             }
-            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); } // Erros de validação (ex: arquivo)
-            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // Regras de negócio
             catch (Exception ex)
             {
-                // Log ex
-                return StatusCode(500, "Ocorreu um erro interno ao processar a solicitação.");
+                return StatusCode(500, ex.Message);
             }
         }
 
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
+        [Consumes("application/json")] 
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
         [ProducesResponseType(409)]
-        public async Task<IActionResult> Update(
-            string id,
-            [FromForm] CreateOrEditEventoDTO dto,
-            [FromForm(Name = "anexos")] List<IFormFile>? anexosNovos,
-            [FromForm] List<string>? anexosParaRemoverIds
-        )
+        public async Task<IActionResult> Update(string id,
+        [FromBody] CreateOrEditEventoDTO dto)
         {
             try
             {
-                var usuario = await GetUsuarioAtual();
-                await _service.AtualizarAsync(id, dto, anexosNovos, anexosParaRemoverIds, usuario);
-
+                var usuario = await _usuarioService.GetUsuarioAtual(User);
+                await _eventoService.AtualizarAsync(id, dto, usuario);
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -135,7 +105,7 @@ namespace SIG_DefesaCivil.API.Controllers
         [ProducesResponseType(typeof(IEnumerable<AnexoDTO>), 200)]
         public async Task<IActionResult> GetAnexos(string id)
         {
-            var anexos = await _service.GetAnexosDTOByEventoIdAsync(id);
+            var anexos = await _eventoService.GetAnexosDTOByEventoIdAsync(id);
             return Ok(anexos);
         }
 
@@ -147,8 +117,8 @@ namespace SIG_DefesaCivil.API.Controllers
         {
             try
             {
-                var usuario = await GetUsuarioAtual();
-                await _service.DeletarAsync(id, usuario);
+                var usuario = await _usuarioService.GetUsuarioAtual(User);
+                await _eventoService.DeletarAsync(id, usuario);
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -164,8 +134,8 @@ namespace SIG_DefesaCivil.API.Controllers
         [HttpGet("{id}/historico")]
         public async Task<IActionResult> GetHistorico(string id)
         {
-            var usuario = await GetUsuarioAtual();
-            var historico = await _service.ListarHistoricoAsync(id, usuario);
+            var usuario = await _usuarioService.GetUsuarioAtual(User);
+            var historico = await _eventoService.ListarHistoricoAsync(id, usuario);
             var historicoDTO = historico
                 .Select(h => new HistoricoEventoDTO
                 {

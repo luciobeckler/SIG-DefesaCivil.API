@@ -12,8 +12,8 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    [Migration("20251125135146_Adicionando quadros e etapas")]
-    partial class Adicionandoquadroseetapas
+    [Migration("20251130233411_melhoria-quadro-Adicionando quadros e etapas e suas regras")]
+    partial class melhoriaquadroAdicionandoquadroseetapasesuasregras
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -221,13 +221,22 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Descricao")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EtapasDestinoId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan?>("MinTempoNaEtapa")
+                        .HasColumnType("time");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PermissoesParaTransicionarParaEstaEtapa")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Posicao")
                         .HasColumnType("int");
@@ -282,6 +291,9 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DataEHoraDoEvento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DataEntradaNaFaseAtual")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Descricao")

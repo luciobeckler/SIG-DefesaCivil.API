@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.DTO.Quadros;
+using SIG_DefesaCivil.API.DTO.Quadros; // Ajuste o namespace se necessário
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Administrador")]
+    [AllowAnonymous] // Exige autenticação para todos os endpoints
     public class QuadroController : ControllerBase
     {
         private readonly QuadroService _service;
@@ -17,14 +17,19 @@ namespace SIG_DefesaCivil.API.Controllers
             _service = service;
         }
 
+        // GET: api/Quadro
         [HttpGet]
+        [ProducesResponseType(typeof(List<QuadroDTO>), 200)]
         public async Task<IActionResult> ListarTodos()
         {
             var quadros = await _service.ListarTodosAsync();
             return Ok(quadros);
         }
 
+        // GET: api/Quadro/{id}
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(QuadroDetalhesDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ObterPorId(string id)
         {
             try
@@ -38,16 +43,35 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
+        // POST: api/Quadro
         [HttpPost]
+        [Authorize(Roles = "Administrador, Diretor")] // Apenas Admin/Diretor podem criar quadros
+        [ProducesResponseType(typeof(QuadroDTO), 201)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> Criar([FromBody] CriarOuEditarQuadroDTO dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var quadro = await _service.CriarAsync(dto);
             return CreatedAtAction(nameof(ObterPorId), new { id = quadro.Id }, quadro);
         }
 
+        // PUT: api/Quadro/{id}
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrador, Diretor")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> Atualizar(string id, [FromBody] CriarOuEditarQuadroDTO dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 await _service.AtualizarAsync(id, dto);
@@ -59,7 +83,11 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
+        // DELETE: api/Quadro/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador")] // Apenas Admin pode deletar quadros
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> Deletar(string id)
         {
             try

@@ -7,6 +7,6 @@
         public string Descricao { get; set; }
 
         // Um Quadro tem várias Etapas
-        public ICollection<Etapa> Etapas{ get; set; }
+        public List <Etapa> Etapas { get; set; } = new List<Etapa>();
     }
 }

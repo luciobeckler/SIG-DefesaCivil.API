@@ -8,16 +8,15 @@
         public int Posicao { get; set; } // Para ordenar as colunas (1, 2, 3...)
         
         // Regras de etapa
-        public int? MinSegundosNaEtapa { get; set; } = 0;
-        public int? MaxSegundosNaEtapa { get; set; }
-        public ICollection<string>? EtapasDestinoId { get; set; }
-        public ICollection<string> PermissoesParaTransicionarParaEstaEtapa { get; set; } //V
+        public TimeSpan? MinTempoNaEtapa { get; set; } = TimeSpan.MinValue;
+        public List<string>? EtapasDestinoId { get; set; } = new List<string>();
+        public List<string> PermissoesParaTransicionarParaEstaEtapa { get; set; } = new List<string>();
 
         // FK para o Quadro
         public string QuadroId{ get; set; }
         public Quadro Quadro{ get; set; }
 
         // Uma Etapa tem vários Eventos (Cartões)
-        public ICollection<Eventos.Evento> Eventos { get; set; }
+        public List<Eventos.Evento> Eventos { get; set; } = new List<Eventos.Evento>();
     }
 }

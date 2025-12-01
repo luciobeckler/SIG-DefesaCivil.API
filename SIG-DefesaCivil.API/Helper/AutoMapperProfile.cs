@@ -37,7 +37,7 @@ namespace SIG_DefesaCivil.API.Helper
                 .ForMember(dest => dest.Anexos, opt => opt.Ignore());
 
             // ==== Usuários (Para EventoDetalhesDTO) ====
-            CreateMap<Usuario, EventoDetalhesUsuarioDTO>()
+            CreateMap<Usuario, DetalhesUsuarioDTO>()
                 .ForMember(dest => dest.Nome, opt => opt.MapFrom(src => src.UserName)); 
 
             // ==== Naturezas ====
