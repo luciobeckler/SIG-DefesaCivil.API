@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Context;
+using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
@@ -35,7 +36,7 @@ builder.Services.AddDbContext<DefesaCivilDbContext>(options =>
 
 // Registrando services
 builder.Services.AddScoped<NaturezaService>();
-builder.Services.AddScoped<EventoService>();
+builder.Services.AddScoped<OcorrenciaService>();
 builder.Services.AddScoped<AnexoService>();
 builder.Services.AddSingleton<GoogleDriveService>();
 builder.Services.AddScoped<QuadroService>();
@@ -148,12 +149,16 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
 
-    var roles = new[] { "Administrador", "Diretor", "Usuário de campo" };
+    var cargos = Enum.GetValues<ECargos>();
 
-    foreach (var role in roles)
+    foreach (var cargo in cargos)
     {
-        if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole(role));
+        var roleName = cargo.ToString();
+
+        if (!await roleManager.RoleExistsAsync(roleName))
+        {
+            await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
     }
 
     var adminEmail = "admin@teste.com";
@@ -167,7 +172,7 @@ using (var scope = app.Services.CreateScope())
             Nome = "Lúcio Beckler Passos",
             Telefone = "31985211711",
             CPF = "14485403645",
-            Cargo = "Administrador",
+            Cargo = nameof(ECargos.Administrador),
             DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
             isAtivo = true,
             isPrimeiroAcesso = false
@@ -175,7 +180,7 @@ using (var scope = app.Services.CreateScope())
 
         var result = await userManager.CreateAsync(newAdmin, "SenhaForte123!");
         if (result.Succeeded)
-            await userManager.AddToRoleAsync(newAdmin, "Administrador");
+            await userManager.AddToRoleAsync(newAdmin, nameof(ECargos.Administrador));
     }
 }
 

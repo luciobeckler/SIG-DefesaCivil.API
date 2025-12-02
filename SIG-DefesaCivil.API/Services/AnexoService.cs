@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Eventos;
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 using SIG_DefesaCivil.API.Services;
 
 public class AnexoService
@@ -44,14 +44,14 @@ public class AnexoService
         return arquivos;
     }
 
-    public async Task RemoverAnexosAsync(string entidadeTipo, string eventoId, List<string> idsAnexosParaRemover)
+    public async Task RemoverAnexosAsync(string entidadeTipo, string ocorrenciaId, List<string> idsAnexosParaRemover)
     {
         if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any())
             return;
 
         var anexos = await _context.Anexos
             .Where(a => idsAnexosParaRemover.Contains(a.Id)
-                     && a.EntidadeId == eventoId
+                     && a.EntidadeId == ocorrenciaId
                      && a.TipoEntidade == entidadeTipo)
             .ToListAsync();
 

@@ -7,12 +7,12 @@ namespace SIG_DefesaCivil.API.Controllers
     {
         private readonly AnexoService _anexoService;
         private readonly UsuarioService _usuarioService;
-        private readonly EventoService _eventoService;
-        public ArquivoController(AnexoService anexoService, UsuarioService usuarioService, EventoService eventoService)
+        private readonly OcorrenciaService _ocorrenciaService;
+        public ArquivoController(AnexoService anexoService, UsuarioService usuarioService, OcorrenciaService ocorrenciaService)
         {
             _anexoService = anexoService;
             _usuarioService = usuarioService;
-            _eventoService = eventoService;
+            _ocorrenciaService = ocorrenciaService;
         }
         
         [HttpDelete("{entidadeId}/anexos")]
@@ -40,14 +40,14 @@ namespace SIG_DefesaCivil.API.Controllers
         [HttpPost("{id}/anexos")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadArquivos(
-        [FromRoute] string eventoId,
+        [FromRoute] string ocorrenciaId,
         [FromBody] string entidade,
         [FromForm] List<IFormFile> arquivos)
         {
             try
             {
-                var evento = await _eventoService.GetEventoPreviewById(eventoId);
-                var anexosDto = await _anexoService.SalvarAnexoAsync(arquivos, eventoId, entidade);
+                var ocorrencia = await _ocorrenciaService.GetOcorrenciaPreviewById(ocorrenciaId);
+                var anexosDto = await _anexoService.SalvarAnexoAsync(arquivos, ocorrenciaId, entidade);
 
                 return Ok(anexosDto);
             }

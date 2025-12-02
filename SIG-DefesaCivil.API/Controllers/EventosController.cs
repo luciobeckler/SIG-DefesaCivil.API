@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos;
 using SIG_DefesaCivil.API.Enums;
-using SIG_DefesaCivil.API.Models.Eventos;
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers
@@ -14,19 +14,19 @@ namespace SIG_DefesaCivil.API.Controllers
     [Authorize]
     public class EventoController : ControllerBase
     {
-        private readonly EventoService _eventoService;
+        private readonly OcorrenciaService _ocorrenciaService;
         private readonly UsuarioService _usuarioService;
         private readonly IMapper _mapper;
 
-        public EventoController(EventoService eventoService, UsuarioService usuarioService, IMapper mapper)
+        public EventoController(OcorrenciaService ocorrenciaService, UsuarioService usuarioService, IMapper mapper)
         {
-            _eventoService = eventoService;
+            _ocorrenciaService = ocorrenciaService;
             _usuarioService = usuarioService;
             _mapper = mapper;
         }
 
         [HttpGet("{id}/detalhes")]
-        [ProducesResponseType(typeof(EventoDetalhesDTO), 200)]
+        [ProducesResponseType(typeof(OcorrenciaDetalhesDTO), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
         public async Task<IActionResult> GetDetalhesById(string id)
@@ -34,10 +34,10 @@ namespace SIG_DefesaCivil.API.Controllers
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                var eventoDto = await _eventoService.DetalhesEventosPorId(id, usuario);
-                eventoDto.Anexos = await _eventoService.GetAnexosDTOByEventoIdAsync(id);
+                var ocorrenciaDto = await _ocorrenciaService.DetalhesEventosPorId(id, usuario);
+                ocorrenciaDto.Anexos = await _ocorrenciaService.GetAnexosDTOByEventoIdAsync(id);
 
-                return Ok(eventoDto);
+                return Ok(ocorrenciaDto);
             }
             catch (InvalidOperationException ex)
             {
@@ -51,19 +51,19 @@ namespace SIG_DefesaCivil.API.Controllers
 
         [HttpPost]
         [Consumes("application/json")] 
-        [ProducesResponseType(typeof(EventoDetalhesDTO), 201)]
+        [ProducesResponseType(typeof(OcorrenciaDetalhesDTO), 201)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Create(
-        [FromBody] CreateOrEditEventoDTO dto,
+        [FromBody] CreateOrEditOcorrenciaDTO dto,
         [FromQuery] string etapaId)
         {
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                var eventoEntity = await _eventoService.CriarAsync(usuario, etapaId, dto);
-                var eventoDto = _mapper.Map<EventoDetalhesDTO>(eventoEntity);
+                var ocorrenciaEntity = await _ocorrenciaService.CriarAsync(usuario, etapaId, dto);
+                var ocorrenciaDto = _mapper.Map<OcorrenciaDetalhesDTO>(ocorrenciaEntity);
 
-                return CreatedAtAction(nameof(GetDetalhesById), new { id = eventoEntity.Id }, eventoDto);
+                return CreatedAtAction(nameof(GetDetalhesById), new { id = ocorrenciaEntity.Id }, ocorrenciaDto);
             }
             catch (Exception ex)
             {
@@ -78,12 +78,12 @@ namespace SIG_DefesaCivil.API.Controllers
         [ProducesResponseType(403)]
         [ProducesResponseType(409)]
         public async Task<IActionResult> Update(string id,
-        [FromBody] CreateOrEditEventoDTO dto)
+        [FromBody] CreateOrEditOcorrenciaDTO dto)
         {
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                await _eventoService.AtualizarAsync(id, dto, usuario);
+                await _ocorrenciaService.AtualizarAsync(id, dto, usuario);
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -105,7 +105,7 @@ namespace SIG_DefesaCivil.API.Controllers
         [ProducesResponseType(typeof(IEnumerable<AnexoDTO>), 200)]
         public async Task<IActionResult> GetAnexos(string id)
         {
-            var anexos = await _eventoService.GetAnexosDTOByEventoIdAsync(id);
+            var anexos = await _ocorrenciaService.GetAnexosDTOByEventoIdAsync(id);
             return Ok(anexos);
         }
 
@@ -118,7 +118,7 @@ namespace SIG_DefesaCivil.API.Controllers
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                await _eventoService.DeletarAsync(id, usuario);
+                await _ocorrenciaService.DeletarAsync(id, usuario);
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -135,12 +135,12 @@ namespace SIG_DefesaCivil.API.Controllers
         public async Task<IActionResult> GetHistorico(string id)
         {
             var usuario = await _usuarioService.GetUsuarioAtual(User);
-            var historico = await _eventoService.ListarHistoricoAsync(id, usuario);
+            var historico = await _ocorrenciaService.ListarHistoricoAsync(id, usuario);
             var historicoDTO = historico
                 .Select(h => new HistoricoEventoDTO
                 {
                     Id = h.Id,
-                    EventoId = h.EventoId,
+                    EventoId = h.OcorrenciaId,
                     UsuarioId = h.UsuarioId,
                     Acao = h.Acao,
                     UltimaAlteracao = h.UltimaAlteracao

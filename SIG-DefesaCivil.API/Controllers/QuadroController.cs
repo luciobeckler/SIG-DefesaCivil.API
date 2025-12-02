@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.DTO.Quadros; // Ajuste o namespace se necessário
 using SIG_DefesaCivil.API.Services;
 
@@ -45,7 +46,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // POST: api/Quadro
         [HttpPost]
-        [Authorize(Roles = "Administrador, Diretor")] // Apenas Admin/Diretor podem criar quadros
+        [Authorize(Roles = Permissoes.ApenasAdmin)]
         [ProducesResponseType(typeof(QuadroDTO), 201)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Criar([FromBody] CriarOuEditarQuadroDTO dto)
@@ -61,7 +62,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // PUT: api/Quadro/{id}
         [HttpPut("{id}")]
-        [Authorize(Roles = "Administrador, Diretor")]
+        [Authorize(Roles = Permissoes.ApenasAdmin)]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -85,7 +86,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // DELETE: api/Quadro/{id}
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrador")] // Apenas Admin pode deletar quadros
+        [Authorize(Roles = Permissoes.ApenasAdmin)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Deletar(string id)

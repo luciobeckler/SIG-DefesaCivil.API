@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.Models;
@@ -14,7 +15,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Permissoes.DiretorOuSuperior)]
     public class UsuariosController : ControllerBase
     {
         private readonly RoleManager<IdentityRole> _roleManager;

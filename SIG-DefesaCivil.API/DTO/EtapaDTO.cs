@@ -8,8 +8,8 @@ namespace SIG_DefesaCivil.API.DTO.Etapas
     {
         public string Id { get; set; }
 
-        // Inclui os eventos (cartões) para renderizar o quadro
-        public ICollection<EventoPreviewDTO> Eventos { get; set; } = new List<EventoPreviewDTO>();
+        // Inclui os ocorrencias (cartões) para renderizar o quadro
+        public ICollection<OcorrenciaPreviewDTO> Ocorrencias { get; set; } = new List<OcorrenciaPreviewDTO>();
     }
 
     public class CriaOuAtualizaEtapaDTO : EtapaBaseDTO

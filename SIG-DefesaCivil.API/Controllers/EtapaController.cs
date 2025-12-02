@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.DTO.Etapas; // Ajuste o namespace se necessário
 using SIG_DefesaCivil.API.Services;
 
@@ -7,7 +8,7 @@ namespace SIG_DefesaCivil.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = Permissoes.ApenasAdmin)]
     public class EtapaController : ControllerBase
     {
         private readonly EtapaService _service;
@@ -19,7 +20,6 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // POST: api/Etapa
         [HttpPost]
-        [Authorize(Roles = "Administrador, Diretor")]
         [ProducesResponseType(typeof(EtapaDTO), 201)] // Retorna 200 no seu service, mas CreatedAt seria melhor se possível
         [ProducesResponseType(400)]
         [ProducesResponseType(404)] // Se o quadro não existir
@@ -49,7 +49,6 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // PUT: api/Etapa/{id}
         [HttpPut("{id}")]
-        [Authorize(Roles = "Administrador, Diretor")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -88,10 +87,9 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // DELETE: api/Etapa/{id}
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrador, Diretor")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        [ProducesResponseType(409)] // Conflict se tiver eventos
+        [ProducesResponseType(409)] // Conflict se tiver ocorrencias
         public async Task<IActionResult> Deletar(string id)
         {
             try
@@ -103,7 +101,7 @@ namespace SIG_DefesaCivil.API.Controllers
             {
                 return NotFound(new { message = ex.Message });
             }
-            catch (InvalidOperationException ex) // Se a etapa tiver eventos
+            catch (InvalidOperationException ex) // Se a etapa tiver ocorrencias
             {
                 return Conflict(new { message = ex.Message });
             }

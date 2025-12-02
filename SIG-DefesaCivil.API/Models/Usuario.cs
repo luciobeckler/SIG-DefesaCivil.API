@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using SIG_DefesaCivil.API.Models.Eventos;
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 
 namespace SIG_DefesaCivil.API.Models
 {
@@ -16,8 +16,8 @@ namespace SIG_DefesaCivil.API.Models
         public string? Endereco { get; set; }
         public string? DataDeNascimento { get; set; }
 
-        // Relacionamento com eventos: Um usuário pode ser responsável por vários eventos
-        public ICollection<Evento>? EventosCriados { get; set; } = new List<Evento>();
+        // Relacionamento com ocorrencias: Um usuário pode ser responsável por vários ocorrencias
+        public ICollection<Ocorrencia.Ocorrencia>? OcorrenciasCriados { get; set; } = new List<Ocorrencia.Ocorrencia>();
 
     }
 }

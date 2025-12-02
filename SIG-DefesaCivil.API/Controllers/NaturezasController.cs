@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.DTOs;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
@@ -8,7 +9,7 @@ namespace SIG_DefesaCivil.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Permissoes.DiretorOuSuperior)]
     public class NaturezasController : ControllerBase
     {
         private readonly NaturezaService _service;

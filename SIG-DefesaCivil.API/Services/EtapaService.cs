@@ -2,8 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO.Etapas;
+using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Eventos;
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 
 namespace SIG_DefesaCivil.API.Services
 {
@@ -77,43 +78,43 @@ namespace SIG_DefesaCivil.API.Services
         public async Task DeletarAsync(string id)
         {
             var etapa = await _context.Etapas
-                .Include(e => e.Eventos)
+                .Include(e => e.Ocorrencias)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (etapa == null)
                 throw new KeyNotFoundException("Etapa não encontrada.");
 
-            // Opcional: Impedir exclusão se houver eventos (proteção de dados)
-            if (etapa.Eventos != null && etapa.Eventos.Any())
+            // Opcional: Impedir exclusão se houver ocorrencias (proteção de dados)
+            if (etapa.Ocorrencias != null && etapa.Ocorrencias.Any())
             {
-                throw new InvalidOperationException("Não é possível excluir uma etapa que contém eventos. Mova os eventos primeiro.");
+                throw new InvalidOperationException("Não é possível excluir uma etapa que contém ocorrencias. Mova os ocorrencias primeiro.");
             }
 
             _context.Etapas.Remove(etapa);
             await _context.SaveChangesAsync();
         }
 
-        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Evento evento, string etapaId)
+        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string etapaId)
         {
             var etapa = await GetEtapaById(etapaId);
             if(etapa.Posicao != 0)
-                throw new InvalidOperationException("Só é possíve criar o evento na primeira etapa do quadro.");
+                throw new InvalidOperationException("Só é possíve criar o ocorrencia na primeira etapa do quadro.");
 
             VerificaPermissaoParaMudarParaFase(usuario, etapa);
 
-            etapa.Eventos.Add(evento);
+            etapa.Ocorrencias.Add(ocorrencia);
         }
         
-        public async Task TransicionaEvento(Usuario usuario , Evento evento, string etapaAtualId, string etapaDestinoId)
+        public async Task TransicionaEvento(Usuario usuario , Ocorrencia ocorrencia, string etapaAtualId, string etapaDestinoId)
         {
             var etapaAtual = await GetEtapaById(etapaAtualId);
             var etapaDestino = await GetEtapaById(etapaDestinoId);
 
-            VerificaRegrasDeTransicao(usuario,evento,etapaAtual, etapaDestino);
+            VerificaRegrasDeTransicao(usuario,ocorrencia,etapaAtual, etapaDestino);
 
-            etapaAtual.Eventos.Remove(evento);
-            etapaDestino.Eventos.Add(evento);
-            evento.DataEntradaNaFaseAtual = DateTime.Now;
+            etapaAtual.Ocorrencias.Remove(ocorrencia);
+            etapaDestino.Ocorrencias.Add(ocorrencia);
+            ocorrencia.DataEntradaNaFaseAtual = DateTime.Now;
 
             await _context.SaveChangesAsync();
         }
@@ -131,30 +132,32 @@ namespace SIG_DefesaCivil.API.Services
             return etapa;
         }
 
-        private void VerificaRegrasDeTransicao(Usuario usuario, Evento evento, Etapa etapaAtual, Etapa etapaDestino)
+        private void VerificaRegrasDeTransicao(Usuario usuario, Ocorrencia ocorrencia, Etapa etapaAtual, Etapa etapaDestino)
         {
             VerificaPermissaoParaMudarParaFase(usuario, etapaDestino);
-            VerificaEstadiaMinimaNaFase(evento, etapaAtual);
-            VerificaPossibilidadeDeTransicaoParaFase(evento, etapaAtual, etapaDestino);
+            VerificaEstadiaMinimaNaFase(ocorrencia, etapaAtual);
+            VerificaPossibilidadeDeTransicaoParaFase(ocorrencia, etapaAtual, etapaDestino);
         }
 
         private void VerificaPermissaoParaMudarParaFase(Usuario usuario, Etapa etapaDestino)
         {
-            if (!etapaDestino.PermissoesParaTransicionarParaEstaEtapa.Contains(usuario.Cargo))
+
+            if (!etapaDestino.PermissoesParaTransicionarParaEstaEtapa
+                    .Contains(Enum.Parse<ECargos>(usuario.Cargo)))
             {
-                throw new UnauthorizedAccessException("Você não tem permissão para transicionar o evento para a fase desejada.");
+                throw new UnauthorizedAccessException("Você não tem permissão para transicionar o ocorrencia para a fase desejada.");
             }
         }
 
-        private void VerificaEstadiaMinimaNaFase(Evento evento, Etapa etapaAtual)
+        private void VerificaEstadiaMinimaNaFase(Ocorrencia ocorrencia, Etapa etapaAtual)
         {
-            if (DateTime.Now - evento.DataEntradaNaFaseAtual < etapaAtual.MinTempoNaEtapa)
+            if (DateTime.Now - ocorrencia.DataEntradaNaFaseAtual < etapaAtual.MinTempoNaEtapa)
             {
                 throw new InvalidOperationException("Evento não permaneceu o tempo mínimo necessário na fase atual.");
             }
         }
 
-        private void VerificaPossibilidadeDeTransicaoParaFase(Evento evento, Etapa etapaAtual, Etapa etapaDestino)
+        private void VerificaPossibilidadeDeTransicaoParaFase(Ocorrencia ocorrencia, Etapa etapaAtual, Etapa etapaDestino)
         {
             if (etapaAtual.EtapasDestinoId != null && !etapaAtual.EtapasDestinoId.Contains(etapaDestino.Id))
             {

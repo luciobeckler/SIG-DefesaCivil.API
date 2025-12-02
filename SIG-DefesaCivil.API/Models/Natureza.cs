@@ -1,6 +1,6 @@
 ﻿// SIG_DefesaCivil.API/Models/Natureza.cs
 
-using SIG_DefesaCivil.API.Models.Eventos;
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 
 namespace SIG_DefesaCivil.API.Models
 {
@@ -15,7 +15,7 @@ namespace SIG_DefesaCivil.API.Models
         public Natureza? NaturezaPai { get; set; }
         public ICollection<Natureza>? SubNaturezas { get; set; } = new List<Natureza>();
 
-        // N-N com eventos
-        public ICollection<Evento> Eventos { get; set; } = new List<Evento>();
+        // N-N com ocorrencias
+        public ICollection<Ocorrencia.Ocorrencia> Ocorrencias { get; set; } = new List<Ocorrencia.Ocorrencia>();
     }
 }

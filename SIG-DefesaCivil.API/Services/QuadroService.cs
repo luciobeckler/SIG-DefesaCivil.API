@@ -33,10 +33,10 @@ namespace SIG_DefesaCivil.API.Services
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(q => q.Etapas)
-                    .ThenInclude(e => e.Eventos)
+                    .ThenInclude(e => e.Ocorrencias)
                         .ThenInclude(ev => ev.UsuarioCriador)
                 .Include(q => q.Etapas)
-                    .ThenInclude(e => e.Eventos)
+                    .ThenInclude(e => e.Ocorrencias)
                         .ThenInclude(ev => ev.Naturezas)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
