@@ -1,7 +1,5 @@
 ﻿// SIG_DefesaCivil.API/Models/Natureza.cs
 
-using SIG_DefesaCivil.API.Models.Ocorrencia;
-
 namespace SIG_DefesaCivil.API.Models
 {
     public class Natureza
@@ -13,9 +11,9 @@ namespace SIG_DefesaCivil.API.Models
         // Auto-relação de hierarquia
         public string? NaturezaPaiId { get; set; }
         public Natureza? NaturezaPai { get; set; }
-        public ICollection<Natureza>? SubNaturezas { get; set; } = new List<Natureza>();
+        public List<Natureza>? SubNaturezas { get; set; } = new List<Natureza>();
 
         // N-N com ocorrencias
-        public ICollection<Ocorrencia.Ocorrencia> Ocorrencias { get; set; } = new List<Ocorrencia.Ocorrencia>();
+        public List<Ocorrencia.Ocorrencia> Ocorrencias { get; set; } = new List<Ocorrencia.Ocorrencia>();
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIG_DefesaCivil.API.Enums; // Importante para os Enums
+using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 using System.Linq.Expressions;
@@ -16,14 +16,12 @@ namespace SIG_DefesaCivil.API.Context
             : base(options) { }
 
         // Tabelas
-        public DbSet<Natureza> Naturezas { get; set; } // Renomeado para plural por consistência
-        public DbSet<Ocorrencia> Ocorrencia { get; set; } // Mapeia Ocorrencia para a tabela Ocorrencias
+        public DbSet<Natureza> Naturezas { get; set; }
+        public DbSet<Ocorrencia> Ocorrencia { get; set; }
         public DbSet<OcorrenciaHistorico> OcorrenciasHistoricos { get; set; }
         public DbSet<Anexo> Anexos { get; set; }
         public DbSet<Quadro> Quadros { get; set; }
         public DbSet<Etapa> Etapas { get; set; }
-        public DbSet<Civil> Civis { get; set; }
-        public DbSet<Endereco> Enderecos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,23 +39,22 @@ namespace SIG_DefesaCivil.API.Context
             {
                 entity.ToTable("Ocorrencias");
 
-                // ... (Relacionamentos HasMany/HasOne continuam iguais aqui) ...
                 entity.HasMany(e => e.SubOcorrencias).WithOne(e => e.OcorrenciaPai).HasForeignKey(e => e.OcorrenciaPaiId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasMany(e => e.Naturezas).WithMany(n => n.Ocorrencias).UsingEntity(j => j.ToTable("OcorrenciaNaturezas"));
                 entity.HasOne(e => e.UsuarioCriador).WithMany(u => u.OcorrenciasCriados).HasForeignKey(e => e.UsuarioCriadorId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(e => e.Etapa).WithMany(s => s.Ocorrencias).HasForeignKey(e => e.EtapaId).OnDelete(DeleteBehavior.Restrict);
 
                 // --- CONFIGURAÇÃO AVANÇADA DE MULTI-SELECT (Com Comparadores) ---
-                // Usamos o método auxiliar abaixo para reduzir a repetição de código
+                // Especificando tipos explicitamente <Ocorrencia, TEnum> para evitar erro de inferência
 
-                ConfigureEnumList(entity, e => e.AnalisePreliminar);
-                ConfigureEnumList(entity, e => e.CaracterizacaoDoLocal);
-                ConfigureEnumList(entity, e => e.Edificacao);
-                ConfigureEnumList(entity, e => e.Estrutura);
-                ConfigureEnumList(entity, e => e.TipoDeRisco);
-                ConfigureEnumList(entity, e => e.TipificacaoDaOcorrencia);
-                ConfigureEnumList(entity, e => e.Motivacao);
-                ConfigureEnumList(entity, e => e.AreasAfetadas);
+                ConfigureEnumList<Ocorrencia, EAnalisePreliminar>(entity, e => e.AnalisePreliminar);
+                ConfigureEnumList<Ocorrencia, ECaracterizacaoLocal>(entity, e => e.CaracterizacaoDoLocal);
+                ConfigureEnumList<Ocorrencia, ETipoEdificacao>(entity, e => e.Edificacao);
+                ConfigureEnumList<Ocorrencia, ETipoEstrutura>(entity, e => e.Estrutura);
+                ConfigureEnumList<Ocorrencia, ETipoRisco>(entity, e => e.TipoDeRisco);
+                ConfigureEnumList<Ocorrencia, ETipificacaoOcorrencia>(entity, e => e.TipificacaoDaOcorrencia);
+                ConfigureEnumList<Ocorrencia, EMotivacao>(entity, e => e.Motivacao);
+                ConfigureEnumList<Ocorrencia, EAreaAfetada>(entity, e => e.AreasAfetadas);
 
                 // Single Selects (salvar como string)
                 entity.Property(e => e.GrauDeRisco).HasConversion<string>();
@@ -99,7 +96,7 @@ namespace SIG_DefesaCivil.API.Context
                 entity.ToTable("Quadros");
                 entity.HasKey(q => q.Id);
                 entity.Property(q => q.Nome).IsRequired().HasMaxLength(100);
-                // Relação 1-N: Quadro -> Etapas
+
                 entity.HasMany(q => q.Etapas)
                       .WithOne(e => e.Quadro)
                       .HasForeignKey(e => e.QuadroId)
@@ -112,23 +109,20 @@ namespace SIG_DefesaCivil.API.Context
                 entity.ToTable("Etapas");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Nome).IsRequired().HasMaxLength(100);
-                ConfigureEnumList(entity, e => e.PermissoesParaTransicionarParaEstaEtapa);
-            });
 
-            // === Configuração de Tabelas Auxiliares ===
-            modelBuilder.Entity<Civil>().ToTable("Civis");
-            modelBuilder.Entity<Endereco>().ToTable("Enderecos");
+                // CORREÇÃO PRINCIPAL: Tipagem explícita <Etapa, ECargos>
+                ConfigureEnumList<Etapa, ECargos>(entity, e => e.PermissoesParaTransicionarParaEstaEtapa);
+            });
         }
 
         /// <summary>
-        /// Método auxiliar genérico para configurar listas de Enums.
-        /// Define a Conversão (para string) e o Comparador de Valor (para Change Tracker).
+        /// Método auxiliar genérico para configurar listas de Enums (List<T>).
         /// </summary>
         private void ConfigureEnumList<TEntity, TEnum>(
-         EntityTypeBuilder<TEntity> builder,
-         Expression<Func<TEntity, List<TEnum>>> propertyExpression)
-         where TEntity : class
-         where TEnum : struct, Enum
+            EntityTypeBuilder<TEntity> builder,
+            Expression<Func<TEntity, List<TEnum>>> propertyExpression) // Usa List<T> explicitamente
+            where TEntity : class
+            where TEnum : struct, Enum
         {
             var comparer = new ValueComparer<List<TEnum>>(
                 (c1, c2) => c1.SequenceEqual(c2),

@@ -18,9 +18,10 @@ namespace SIG_DefesaCivil.API.Controllers
 
         public AccountsController(
             UserManager<Usuario> userManager,
-            RoleManager<IdentityRole> roleManager, 
+            RoleManager<IdentityRole> roleManager,
             JwtTokenGenerator jwtTokenGenerator
-        ){
+        )
+        {
             _userManager = userManager;
             _jwtTokenGenerator = jwtTokenGenerator;
             _roleManager = roleManager;

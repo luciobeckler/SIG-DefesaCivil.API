@@ -10,11 +10,11 @@ namespace SIG_DefesaCivil.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = Permissoes.DiretorOuSuperior)]
-    public class NaturezasController : ControllerBase
+    public class NaturezaController : ControllerBase
     {
         private readonly NaturezaService _service;
 
-        public NaturezasController(NaturezaService service)
+        public NaturezaController(NaturezaService service)
         {
             _service = service;
         }

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.Enums;
@@ -10,7 +9,6 @@ using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 using SIG_DefesaCivil.API.TokenGenerator;
-using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -55,14 +53,14 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 }).AddEntityFrameworkStores<DefesaCivilDbContext>()
   .AddDefaultTokenProviders();
 
-    // Configurando autenticação de cookies
+// Configurando autenticação de cookies
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-    // Configurando características do JWT
+// Configurando características do JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -94,7 +92,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-    // Configuração de CORS
+// Configuração de CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
@@ -109,7 +107,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-    // Fazendo com que todos os end-points exijam autenticação por padrão
+// Fazendo com que todos os end-points exijam autenticação por padrão
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -117,7 +115,7 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-    // Services e repositorys
+// Services e repositorys
 builder.Services.AddScoped<JwtTokenGenerator>();
 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 builder.Services.AddAutoMapper(cfg =>

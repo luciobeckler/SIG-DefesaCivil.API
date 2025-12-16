@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTOs;
-using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services
@@ -37,7 +36,7 @@ namespace SIG_DefesaCivil.API.Services
             var natureza = await ObterNaturezaPorCodigo(codigo);
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
-            
+
             return _mapper.Map<NaturezaDTO>(natureza);
         }
 
@@ -124,7 +123,7 @@ namespace SIG_DefesaCivil.API.Services
         public async Task<List<NaturezaDTO>> GetIrmasAsync(string codigo)
         {
             var natureza = await ObterNaturezaPorCodigo(codigo);
-            if (natureza is null) 
+            if (natureza is null)
                 return new List<NaturezaDTO>();
 
             var irmas = await _context.Naturezas

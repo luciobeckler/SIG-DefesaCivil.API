@@ -4,10 +4,6 @@ using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SIG_DefesaCivil.API.Services
 {

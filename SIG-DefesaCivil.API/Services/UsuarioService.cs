@@ -1,5 +1,4 @@
-﻿using Google.Apis.Drive.v3.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using SIG_DefesaCivil.API.Models;
 using System.Security.Claims;
 
@@ -8,7 +7,7 @@ namespace SIG_DefesaCivil.API.Services
     public class UsuarioService
     {
         private readonly UserManager<Usuario> _userManager;
-        public UsuarioService(UserManager<Usuario> userManager) 
+        public UsuarioService(UserManager<Usuario> userManager)
         {
             _userManager = userManager;
         }

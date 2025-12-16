@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +6,6 @@ using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.TokenGenerator;
 using System.Security.Claims;
 
 namespace SIG_DefesaCivil.API.Controllers
@@ -157,7 +155,7 @@ namespace SIG_DefesaCivil.API.Controllers
             if (emailEmUso)
                 return BadRequest(new { message = "E-mail já está em uso." });
 
-            var cpfEmUso = await _userManager.Users.AnyAsync(u => (u.CPF == dto.CPF) && (u.Id != id) );
+            var cpfEmUso = await _userManager.Users.AnyAsync(u => (u.CPF == dto.CPF) && (u.Id != id));
             if (cpfEmUso)
                 return BadRequest(new { message = "CPF já está em uso." });
 

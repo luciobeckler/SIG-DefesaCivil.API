@@ -17,8 +17,8 @@ namespace SIG_DefesaCivil.API.Services
         private readonly EtapaService _etapaService;
 
         public OcorrenciaService(
-            DefesaCivilDbContext context, 
-            IMapper mapper, 
+            DefesaCivilDbContext context,
+            IMapper mapper,
             AnexoService anexoService,
             EtapaService etapaService
             )
@@ -60,18 +60,19 @@ namespace SIG_DefesaCivil.API.Services
             var ocorrenciaDto = _mapper.Map<OcorrenciaDetalhesDTO>(ocorrencia);
 
             // Mapeia e atribui os anexos
-            ocorrenciaDto.Anexos = _mapper.Map<ICollection<AnexoDTO>>(anexos);
+            ocorrenciaDto.Anexos = _mapper.Map<List<AnexoDTO>>(anexos);
 
             await _context.SaveChangesAsync(); // Salva o histórico
             return ocorrenciaDto;
         }
 
-        public async Task<Ocorrencia> CriarAsync(Usuario usuario, string etapaId, CreateOrEditOcorrenciaDTO dto)
+        public async Task<Ocorrencia> CriarAsync(Usuario usuario, string quadroId, CreateOrEditOcorrenciaDTO dto)
         {
-            // --- 1. Validações ---
-            await ValidarCodigoUnicoAsync(dto.Numero);
+            var ultimoNumeroDeProtocolo = await _context.Ocorrencia.MaxAsync(e => (int?)e.Numero) ?? 0;
+
+
             ValidarHierarquiaUnica(dto);
-            await ValidarEventoPaiAsync(dto.EventoPaiId);
+            await ValidarEventoPaiAsync(dto.OcorrenciaPaiId);
             var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
             // --- 2. Mapeamento e Criação ---
@@ -79,17 +80,18 @@ namespace SIG_DefesaCivil.API.Services
 
             // Define propriedades gerenciadas manualmente
             ocorrencia.Id = Guid.NewGuid().ToString();
+            ocorrencia.Numero = ultimoNumeroDeProtocolo + 1;
             ocorrencia.UsuarioCriadorId = usuario.Id;
-            ocorrencia.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId;
+            ocorrencia.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) ? null : dto.OcorrenciaPaiId;
             ocorrencia.Naturezas = naturezas;
-            ocorrencia.isVisible = true; // Valor padrão definido na entidade
+            ocorrencia.isVisible = true;
 
             await AssociaSubEventosNaCriacao(ocorrencia, dto);
 
             // --- 3. Salva o Evento Principal ---
             _context.Ocorrencia.Add(ocorrencia);
 
-            await _etapaService.AdicionaEventoNaPrimeiraEtapaAsync(usuario, ocorrencia, etapaId);
+            await _etapaService.AdicionaEventoNaPrimeiraEtapaAsync(usuario, ocorrencia, quadroId);
             await _context.SaveChangesAsync();
 
             return ocorrencia;
@@ -97,8 +99,6 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task AtualizarAsync(string id, CreateOrEditOcorrenciaDTO dto, Usuario usuario)
         {
-            // --- 1. Validações ---
-            await ValidarCodigoUnicoAsync(dto.Numero, id);
             ValidarHierarquiaUnica(dto);
             var naturezasParaAssociar = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
@@ -106,7 +106,7 @@ namespace SIG_DefesaCivil.API.Services
             var ocorrencia = await RecuperaEventoCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(ocorrencia.UsuarioCriadorId, usuario);
 
-            if (!string.IsNullOrWhiteSpace(dto.EventoPaiId) && dto.EventoPaiId == id)
+            if (!string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) && dto.OcorrenciaPaiId == id)
             {
                 throw new InvalidOperationException("Um ocorrencia não pode ser definido como seu próprio ocorrencia pai.");
             }
@@ -164,25 +164,25 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderByDescending(h => h.UltimaAlteracao)
                 .ToListAsync();
         }
-        public async Task<ICollection<AnexoDTO>> GetAnexosDTOByEventoIdAsync(string ocorrenciaId)
+        public async Task<List<AnexoDTO>> GetAnexosDTOByEventoIdAsync(string ocorrenciaId)
         {
             var anexos = await _context.Anexos
                 .Where(a => a.EntidadeId == ocorrenciaId && a.TipoEntidade == "Evento")
                 .AsNoTracking()
                 .ToListAsync();
 
-            return _mapper.Map<ICollection<AnexoDTO>>(anexos);
+            return _mapper.Map<List<AnexoDTO>>(anexos);
         }
 
         private async Task AtualizaEventoPaiAsync(Ocorrencia ocorrenciaParaAtualizar, CreateOrEditOcorrenciaDTO dto)
         {
-            await ValidarEventoPaiAsync(dto.EventoPaiId);
-            ocorrenciaParaAtualizar.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.EventoPaiId) ? null : dto.EventoPaiId;
+            await ValidarEventoPaiAsync(dto.OcorrenciaPaiId);
+            ocorrenciaParaAtualizar.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) ? null : dto.OcorrenciaPaiId;
         }
 
         private async Task AtualizaRelacionamentoSubEventosAsync(Ocorrencia ocorrenciaParaAtualizar, CreateOrEditOcorrenciaDTO dto)
         {
-            var novosIds = dto.SubEventosId?.ToHashSet() ?? new HashSet<string>();
+            var novosIds = dto.SubOcorrenciasId?.ToHashSet() ?? new HashSet<string>();
 
             if (novosIds.Contains(ocorrenciaParaAtualizar.Id))
             {
@@ -249,21 +249,6 @@ namespace SIG_DefesaCivil.API.Services
             }
         }
 
-        private async Task ValidarCodigoUnicoAsync(string codigo, string? ocorrenciaIgnoradoId = null)
-        {
-            var query = _context.Ocorrencia.AsNoTracking().Where(e => e.Numero.ToUpper() == codigo.ToUpper());
-
-            if (ocorrenciaIgnoradoId != null)
-            {
-                query = query.Where(e => e.Id != ocorrenciaIgnoradoId);
-            }
-
-            if (await query.AnyAsync())
-            {
-                throw new InvalidOperationException($"O código '{codigo}' já está em uso por outro ocorrencia.");
-            }
-        }
-
         private void AdicionaOuAtualizaHistorico(string ocorrenciaId, string usuarioId, string acao)
         {
             var registroUsuarioNoHistoricoEvento = _context.OcorrenciasHistoricos.FirstOrDefault(e =>
@@ -306,8 +291,8 @@ namespace SIG_DefesaCivil.API.Services
 
         private void ValidarHierarquiaUnica(CreateOrEditOcorrenciaDTO dto)
         {
-            var idDoPai = dto.EventoPaiId;
-            var idsDosSubEventos = dto.SubEventosId?.ToHashSet() ?? new HashSet<string>();
+            var idDoPai = dto.OcorrenciaPaiId;
+            var idsDosSubEventos = dto.SubOcorrenciasId?.ToHashSet() ?? new HashSet<string>();
 
             if (string.IsNullOrWhiteSpace(idDoPai) || idsDosSubEventos.Count == 0)
             {
@@ -322,16 +307,16 @@ namespace SIG_DefesaCivil.API.Services
 
         private async Task AssociaSubEventosNaCriacao(Ocorrencia novoEventoPai, CreateOrEditOcorrenciaDTO dto)
         {
-            if (dto.SubEventosId != null && dto.SubEventosId.Any())
+            if (dto.SubOcorrenciasId != null && dto.SubOcorrenciasId.Any())
             {
                 var subEventos = await _context.Ocorrencia
-                    .Where(e => dto.SubEventosId.Contains(e.Id))
+                    .Where(e => dto.SubOcorrenciasId.Contains(e.Id))
                     .ToListAsync();
 
-                if (subEventos.Count != dto.SubEventosId.Count)
+                if (subEventos.Count != dto.SubOcorrenciasId.Count)
                 {
                     var idsEncontrados = subEventos.Select(e => e.Id).ToList();
-                    var idsNaoEncontrados = dto.SubEventosId.Except(idsEncontrados);
+                    var idsNaoEncontrados = dto.SubOcorrenciasId.Except(idsEncontrados);
                     throw new InvalidOperationException($"Os seguintes IDs de sub-ocorrencias não foram encontrados: {string.Join(", ", idsNaoEncontrados)}");
                 }
 
@@ -342,7 +327,7 @@ namespace SIG_DefesaCivil.API.Services
             }
         }
 
-        private async Task<ICollection<Natureza>> ValidarEBuscarNaturezasAsync(ICollection<string>? naturezasId)
+        private async Task<List<Natureza>> ValidarEBuscarNaturezasAsync(List<string>? naturezasId)
         {
             if (naturezasId == null || !naturezasId.Any())
             {
@@ -365,7 +350,7 @@ namespace SIG_DefesaCivil.API.Services
             return naturezas;
         }
 
-        private async Task AtualizaRelacionamentoNaturezasAsync(Ocorrencia ocorrenciaParaAtualizar, ICollection<Natureza> naturezasParaAssociar)
+        private async Task AtualizaRelacionamentoNaturezasAsync(Ocorrencia ocorrenciaParaAtualizar, List<Natureza> naturezasParaAssociar)
         {
             await _context.Entry(ocorrenciaParaAtualizar)
                 .Collection(e => e.Naturezas)
@@ -389,10 +374,10 @@ namespace SIG_DefesaCivil.API.Services
         }
         private async Task ValidarEventoPaiAsync(string? ocorrenciaPaiId)
         {
-            if (string.IsNullOrWhiteSpace(ocorrenciaPaiId)) 
+            if (string.IsNullOrWhiteSpace(ocorrenciaPaiId))
                 return;
             var paiExiste = await _context.Ocorrencia.AnyAsync(e => e.Id == ocorrenciaPaiId);
-            if (!paiExiste) 
+            if (!paiExiste)
                 throw new InvalidOperationException($"O ocorrencia pai com o ID '{ocorrenciaPaiId}' não foi encontrado.");
         }
     }

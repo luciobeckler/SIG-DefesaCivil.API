@@ -14,7 +14,7 @@ namespace SIG_DefesaCivil.API.Controllers
             _usuarioService = usuarioService;
             _ocorrenciaService = ocorrenciaService;
         }
-        
+
         [HttpDelete("{entidadeId}/anexos")]
         [Consumes("application/json")]
         [ProducesResponseType(204)]
@@ -28,7 +28,7 @@ namespace SIG_DefesaCivil.API.Controllers
                 if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any())
                     return BadRequest("Lista de IDs para remoção vazia.");
 
-                await _anexoService.RemoverAnexosAsync(entidadeTipo ,entidadeId, idsAnexosParaRemover);
+                await _anexoService.RemoverAnexosAsync(entidadeTipo, entidadeId, idsAnexosParaRemover);
                 return NoContent();
             }
             catch (Exception ex)

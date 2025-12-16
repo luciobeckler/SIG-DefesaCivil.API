@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Context;
 
@@ -11,9 +12,11 @@ using SIG_DefesaCivil.API.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213051021_Alterando nome do campo dataRegistroOcorrencia")]
+    partial class AlterandonomedocampodataRegistroOcorrencia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -217,6 +220,62 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.ToTable("Anexos", (string)null);
                 });
 
+            modelBuilder.Entity("SIG_DefesaCivil.API.Models.Civil", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CPF")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RG")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Telefone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Civis", (string)null);
+                });
+
+            modelBuilder.Entity("SIG_DefesaCivil.API.Models.Endereco", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Bairro")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CEP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Complemento")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rua")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Enderecos", (string)null);
+                });
+
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Etapa", b =>
                 {
                     b.Property<string>("Id")
@@ -294,7 +353,7 @@ namespace SIG_DefesaCivil.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DataEHoraDoOcorrido")
+                    b.Property<DateTime>("DataEHoraDoOcorrido")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataEHoraInicioAtendimento")
@@ -303,27 +362,16 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<DateTime?>("DataEHoraTerminoAtendimento")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DataEntradaNaFaseAtual")
+                    b.Property<DateTime>("DataEntradaNaFaseAtual")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Edificacao")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EnderecoBairro")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoCEP")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoComplemento")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoNumero")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoRua")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("EnderecoId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Estrutura")
                         .IsRequired()
@@ -334,56 +382,55 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("GrauDeRisco")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Motivacao")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Numero")
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumeroDeAdultos")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeAdultos")
+                    b.Property<int>("NumeroDeComodos")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeComodos")
+                    b.Property<int>("NumeroDeCriancas")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeCriancas")
+                    b.Property<int>("NumeroDeDeficientes")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeDeficientes")
+                    b.Property<int>("NumeroDeIdosos")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeIdosos")
+                    b.Property<int>("NumeroDeMoradias")
                         .HasColumnType("int");
 
-                    b.Property<int?>("NumeroDeMoradias")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("NumeroDePavimentos")
+                    b.Property<int>("NumeroDePavimentos")
                         .HasColumnType("int");
 
                     b.Property<string>("OcorrenciaPaiId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PossuiIPTU")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("PossuiUnidadeFamiliar")
+                    b.Property<bool>("PossuiUnidadeFamiliar")
                         .HasColumnType("bit");
 
                     b.Property<string>("RegimeDeOcupacaoDoImovel")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SolicitanteCPF")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SolicitanteNome")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SolicitanteRG")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("SolicitanteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("TipificacaoDaOcorrencia")
                         .IsRequired()
@@ -402,9 +449,13 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EnderecoId");
+
                     b.HasIndex("EtapaId");
 
                     b.HasIndex("OcorrenciaPaiId");
+
+                    b.HasIndex("SolicitanteId");
 
                     b.HasIndex("UsuarioCriadorId");
 
@@ -651,6 +702,12 @@ namespace SIG_DefesaCivil.API.Migrations
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Ocorrencia.Ocorrencia", b =>
                 {
+                    b.HasOne("SIG_DefesaCivil.API.Models.Endereco", "Endereco")
+                        .WithMany()
+                        .HasForeignKey("EnderecoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SIG_DefesaCivil.API.Models.Etapa", "Etapa")
                         .WithMany("Ocorrencias")
                         .HasForeignKey("EtapaId")
@@ -662,15 +719,25 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasForeignKey("OcorrenciaPaiId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIG_DefesaCivil.API.Models.Civil", "Solicitante")
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SIG_DefesaCivil.API.Models.Usuario", "UsuarioCriador")
                         .WithMany("OcorrenciasCriados")
                         .HasForeignKey("UsuarioCriadorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Endereco");
+
                     b.Navigation("Etapa");
 
                     b.Navigation("OcorrenciaPai");
+
+                    b.Navigation("Solicitante");
 
                     b.Navigation("UsuarioCriador");
                 });

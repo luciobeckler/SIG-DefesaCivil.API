@@ -26,14 +26,14 @@ namespace SIG_DefesaCivil.API.Services
             if (!quadroExiste)
                 throw new KeyNotFoundException("O Quadro informado não existe.");
 
-            // Calcula a próxima posição (última + 1)
-            var ultimaPosicao = await _context.Etapas
-                .Where(e => e.QuadroId == dto.QuadroId)
-                .MaxAsync(e => (int?)e.Posicao) ?? 0;
+            var posicaoPreenchida = _context.Etapas
+                .Where(e => e.Quadro.Id == dto.QuadroId && e.Posicao == dto.Posicao);
+            if (posicaoPreenchida != null)
+                throw new ArgumentException("Posição já se encontra preenchida");
 
             var etapa = _mapper.Map<Etapa>(dto);
             etapa.Id = Guid.NewGuid().ToString();
-            etapa.Posicao = ultimaPosicao + 1;
+            etapa.Posicao = dto.Posicao;
 
             _context.Etapas.Add(etapa);
             await _context.SaveChangesAsync();
@@ -94,23 +94,29 @@ namespace SIG_DefesaCivil.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string etapaId)
+        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string quadroId)
         {
-            var etapa = await GetEtapaById(etapaId);
-            if(etapa.Posicao != 0)
-                throw new InvalidOperationException("Só é possíve criar o ocorrencia na primeira etapa do quadro.");
+            var primeiraEtapa = await _context.Etapas
+                .Where(e => e.QuadroId == quadroId)
+                .OrderBy(e => e.Posicao)
+                .FirstOrDefaultAsync();
 
-            VerificaPermissaoParaMudarParaFase(usuario, etapa);
+            if (primeiraEtapa == null)
+            {
+                throw new InvalidOperationException("Este quadro não possui etapas cadastradas.");
+            }
 
-            etapa.Ocorrencias.Add(ocorrencia);
+            VerificaPermissaoParaMudarParaFase(usuario, primeiraEtapa);
+
+            primeiraEtapa.Ocorrencias.Add(ocorrencia);
         }
-        
-        public async Task TransicionaEvento(Usuario usuario , Ocorrencia ocorrencia, string etapaAtualId, string etapaDestinoId)
+
+        public async Task TransicionaEvento(Usuario usuario, Ocorrencia ocorrencia, string etapaAtualId, string etapaDestinoId)
         {
             var etapaAtual = await GetEtapaById(etapaAtualId);
             var etapaDestino = await GetEtapaById(etapaDestinoId);
 
-            VerificaRegrasDeTransicao(usuario,ocorrencia,etapaAtual, etapaDestino);
+            VerificaRegrasDeTransicao(usuario, ocorrencia, etapaAtual, etapaDestino);
 
             etapaAtual.Ocorrencias.Remove(ocorrencia);
             etapaDestino.Ocorrencias.Add(ocorrencia);

@@ -9,12 +9,12 @@ namespace SIG_DefesaCivil.API.DTO.Etapas
         public string Id { get; set; }
 
         // Inclui os ocorrencias (cartões) para renderizar o quadro
-        public ICollection<OcorrenciaPreviewDTO> Ocorrencias { get; set; } = new List<OcorrenciaPreviewDTO>();
+        public List<OcorrenciaPreviewDTO> Ocorrencias { get; set; } = new List<OcorrenciaPreviewDTO>();
     }
 
     public class CriaOuAtualizaEtapaDTO : EtapaBaseDTO
     {
-        
+
     }
 
     public class ReordenarEtapaDTO
@@ -36,7 +36,7 @@ namespace SIG_DefesaCivil.API.DTO.Etapas
     public class RegrasDeTransicaoEtapaDTO
     {
         public TimeSpan? MinTempoNaEtapa { get; set; } = TimeSpan.MinValue;
-        public ICollection<string>? EtapasDestinoId { get; set; } = new List<string>();
-        public ICollection<string>? PermissoesParaTransicionarParaEstaEtapa { get; set; } = new List<string>();
+        public List<string>? EtapasDestinoId { get; set; } = new List<string>();
+        public List<string>? PermissoesParaTransicionarParaEstaEtapa { get; set; } = new List<string>();
     }
 }

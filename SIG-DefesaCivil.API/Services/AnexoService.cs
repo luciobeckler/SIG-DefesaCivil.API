@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Ocorrencia;
 using SIG_DefesaCivil.API.Services;
 
 public class AnexoService
@@ -40,7 +39,7 @@ public class AnexoService
                 _context.Anexos.Add(anexo);
             }
         }
-        
+
         return arquivos;
     }
 

@@ -7,6 +7,6 @@
         public string Descricao { get; set; }
 
         // Um Quadro tem várias Etapas
-        public List <Etapa> Etapas { get; set; } = new List<Etapa>();
+        public List<Etapa> Etapas { get; set; } = new List<Etapa>();
     }
 }

@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Ocorrencias;
 using SIG_DefesaCivil.API.Enums;
-using SIG_DefesaCivil.API.Models.Ocorrencia;
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers
@@ -50,17 +50,18 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpPost]
-        [Consumes("application/json")] 
+        [Consumes("application/json")]
         [ProducesResponseType(typeof(OcorrenciaDetalhesDTO), 201)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> Create(
+        public async Task<IActionResult>
+            te(
         [FromBody] CreateOrEditOcorrenciaDTO dto,
-        [FromQuery] string etapaId)
+        [FromQuery] string quadroId)
         {
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                var ocorrenciaEntity = await _ocorrenciaService.CriarAsync(usuario, etapaId, dto);
+                var ocorrenciaEntity = await _ocorrenciaService.CriarAsync(usuario, quadroId, dto);
                 var ocorrenciaDto = _mapper.Map<OcorrenciaDetalhesDTO>(ocorrenciaEntity);
 
                 return CreatedAtAction(nameof(GetDetalhesById), new { id = ocorrenciaEntity.Id }, ocorrenciaDto);
@@ -72,7 +73,7 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Consumes("application/json")] 
+        [Consumes("application/json")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
@@ -95,7 +96,7 @@ namespace SIG_DefesaCivil.API.Controllers
             }
             catch (UnauthorizedAccessException ex) { return StatusCode(403, new { message = ex.Message }); }
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Ocorreu um erro interno ao processar a solicitação.");
             }
@@ -137,7 +138,7 @@ namespace SIG_DefesaCivil.API.Controllers
             var usuario = await _usuarioService.GetUsuarioAtual(User);
             var historico = await _ocorrenciaService.ListarHistoricoAsync(id, usuario);
             var historicoDTO = historico
-                .Select(h => new HistoricoEventoDTO
+                .Select(h => new HistoricoOcorrenciaDTO
                 {
                     Id = h.Id,
                     EventoId = h.OcorrenciaId,
