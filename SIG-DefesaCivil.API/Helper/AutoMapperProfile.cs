@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using SIG_DefesaCivil.API.DTO;
 using SIG_DefesaCivil.API.DTO.Etapas;
-using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Ocorrencias;
 using SIG_DefesaCivil.API.DTO.Quadros;
 using SIG_DefesaCivil.API.DTOs; // NaturezaDTOs gerais
 using SIG_DefesaCivil.API.Enums;

@@ -11,6 +11,7 @@ namespace SIG_DefesaCivil.API.Models
 
         // Regras de etapa
         public TimeSpan? MinTempoNaEtapa { get; set; } = TimeSpan.MinValue;
+        public TimeSpan? MaxTempoNaEtapa { get; set; } = TimeSpan.MaxValue;
         public List<string>? EtapasDestinoId { get; set; } = new List<string>();
         public List<ECargos> PermissoesParaTransicionarParaEstaEtapa { get; set; } = new List<ECargos>();
 

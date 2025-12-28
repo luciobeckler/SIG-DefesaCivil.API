@@ -1,6 +1,6 @@
 ﻿using SIG_DefesaCivil.API.DTOs;
 
-namespace SIG_DefesaCivil.API.DTO.Eventos
+namespace SIG_DefesaCivil.API.DTO.Ocorrencias
 {
     // --- DTO Base (Campos Compartilhados) ---
     public abstract class OcorrenciaDadosBaseDTO
@@ -39,7 +39,7 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
     {
 
         // Campos Single-Select (Recebe como string do Front)
-        public string? GrauDeRisco { get; set; }
+        public string GrauDeRisco { get; set; }
         public string? RegimeDeOcupacaoDoImovel { get; set; }
 
         // Campos Multi-Select (Recebe como Lista de Strings)
@@ -72,7 +72,7 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
         public DetalhesUsuarioDTO UsuarioCriador { get; set; }
 
         // Campos Single-Select (Retorna como string)
-        public string? GrauDeRisco { get; set; }
+        public string GrauDeRisco { get; set; }
         public string? RegimeDeOcupacaoDoImovel { get; set; }
 
         // Campos Multi-Select (Retorna como Lista de Strings para o Front ler fácil)
@@ -106,6 +106,7 @@ namespace SIG_DefesaCivil.API.DTO.Eventos
         public string? SolicitanteCPF { get; set; }
 
         public List<string> TipoDeRisco { get; set; } = new List<string>();
+        public string GrauDeRisco { get; set; }
         public DateTime? DataEHoraDoOcorrido { get; set; }
     }
 }

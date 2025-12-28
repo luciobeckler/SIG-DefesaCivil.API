@@ -111,20 +111,6 @@ namespace SIG_DefesaCivil.API.Services
             primeiraEtapa.Ocorrencias.Add(ocorrencia);
         }
 
-        public async Task TransicionaEvento(Usuario usuario, Ocorrencia ocorrencia, string etapaAtualId, string etapaDestinoId)
-        {
-            var etapaAtual = await GetEtapaById(etapaAtualId);
-            var etapaDestino = await GetEtapaById(etapaDestinoId);
-
-            VerificaRegrasDeTransicao(usuario, ocorrencia, etapaAtual, etapaDestino);
-
-            etapaAtual.Ocorrencias.Remove(ocorrencia);
-            etapaDestino.Ocorrencias.Add(ocorrencia);
-            ocorrencia.DataEntradaNaFaseAtual = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-        }
-
         public async Task<Etapa> GetEtapaById(string id)
         {
             var etapa = await _context.Etapas
@@ -138,9 +124,9 @@ namespace SIG_DefesaCivil.API.Services
             return etapa;
         }
 
-        private void VerificaRegrasDeTransicao(Usuario usuario, Ocorrencia ocorrencia, Etapa etapaAtual, Etapa etapaDestino)
+        public void VerificaRegrasDeTransicao(Usuario usuario, Ocorrencia ocorrencia, Etapa etapaAtual, Etapa etapaDestino)
         {
-            VerificaPermissaoParaMudarParaFase(usuario, etapaDestino);
+            //VerificaPermissaoParaMudarParaFase(usuario, etapaDestino);
             VerificaEstadiaMinimaNaFase(ocorrencia, etapaAtual);
             VerificaPossibilidadeDeTransicaoParaFase(ocorrencia, etapaAtual, etapaDestino);
         }

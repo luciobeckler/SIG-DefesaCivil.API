@@ -1,4 +1,4 @@
-﻿using SIG_DefesaCivil.API.DTO.Eventos;
+﻿using SIG_DefesaCivil.API.DTO.Ocorrencias;
 using System.ComponentModel.DataAnnotations;
 
 
@@ -36,6 +36,7 @@ namespace SIG_DefesaCivil.API.DTO.Etapas
     public class RegrasDeTransicaoEtapaDTO
     {
         public TimeSpan? MinTempoNaEtapa { get; set; } = TimeSpan.MinValue;
+        public TimeSpan? MaxTempoNaEtapa { get; set; } = TimeSpan.MaxValue;
         public List<string>? EtapasDestinoId { get; set; } = new List<string>();
         public List<string>? PermissoesParaTransicionarParaEstaEtapa { get; set; } = new List<string>();
     }

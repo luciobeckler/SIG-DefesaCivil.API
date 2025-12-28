@@ -9,6 +9,7 @@ using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 using SIG_DefesaCivil.API.TokenGenerator;
+using SIG_DefesaCivil.API.Workers;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -35,11 +36,12 @@ builder.Services.AddDbContext<DefesaCivilDbContext>(options =>
 // Registrando services
 builder.Services.AddScoped<NaturezaService>();
 builder.Services.AddScoped<OcorrenciaService>();
-builder.Services.AddScoped<AnexoService>();
-builder.Services.AddSingleton<GoogleDriveService>();
 builder.Services.AddScoped<QuadroService>();
 builder.Services.AddScoped<EtapaService>();
 builder.Services.AddScoped<UsuarioService>();
+builder.Services.AddScoped<AnexoService>();
+builder.Services.AddSingleton<GoogleDriveService>();
+builder.Services.AddHostedService<AutomacaoMovimentacaoWorker>();
 
 //Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
@@ -148,11 +150,9 @@ using (var scope = app.Services.CreateScope())
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
 
     var cargos = Enum.GetValues<ECargos>();
-
     foreach (var cargo in cargos)
     {
         var roleName = cargo.ToString();
-
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
@@ -179,6 +179,32 @@ using (var scope = app.Services.CreateScope())
         var result = await userManager.CreateAsync(newAdmin, "SenhaForte123!");
         if (result.Succeeded)
             await userManager.AddToRoleAsync(newAdmin, nameof(ECargos.Administrador));
+    }
+
+    // 3. Criação do Usuário SISTEMA (Para o Worker de Automação)
+    var sistemaEmail = "sistema@admin.com";
+    var sistemaUser = await userManager.FindByEmailAsync(sistemaEmail);
+    if (sistemaUser == null)
+    {
+        Usuario newSistema = new Usuario
+        {
+            UserName = sistemaEmail,
+            Email = sistemaEmail,
+            Nome = "Sistema Automático",
+            Telefone = "00000000000",
+            CPF = "00000000000",
+            Cargo = nameof(ECargos.Administrador),
+            DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
+            isAtivo = true,
+            isPrimeiroAcesso = false
+        };
+
+
+        var result = await userManager.CreateAsync(newSistema, "Sistema#Auto2025!");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(newSistema, nameof(ECargos.Administrador));
+        }
     }
 }
 

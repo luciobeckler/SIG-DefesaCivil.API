@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.DTO.Etapas; // Ajuste o namespace se necessário
+using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers
@@ -12,8 +14,9 @@ namespace SIG_DefesaCivil.API.Controllers
     public class EtapaController : ControllerBase
     {
         private readonly EtapaService _service;
+        private readonly UserManager<Usuario> _userManager;
 
-        public EtapaController(EtapaService service)
+        public EtapaController(EtapaService service, UserManager<Usuario> userManager)
         {
             _service = service;
         }

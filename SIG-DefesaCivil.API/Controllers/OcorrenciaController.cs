@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.DTO.Ocorrencias;
 using SIG_DefesaCivil.API.Enums;
+using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers
@@ -12,20 +14,22 @@ namespace SIG_DefesaCivil.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class EventoController : ControllerBase
+    public class OcorrenciaController : ControllerBase
     {
         private readonly OcorrenciaService _ocorrenciaService;
         private readonly UsuarioService _usuarioService;
         private readonly IMapper _mapper;
+        private readonly UserManager<Usuario> _userManager;
 
-        public EventoController(OcorrenciaService ocorrenciaService, UsuarioService usuarioService, IMapper mapper)
+        public OcorrenciaController(OcorrenciaService ocorrenciaService, UsuarioService usuarioService, IMapper mapper, UserManager<Usuario> userManager)
         {
             _ocorrenciaService = ocorrenciaService;
             _usuarioService = usuarioService;
             _mapper = mapper;
+            _userManager = userManager;
         }
 
-        [HttpGet("{id}/detalhes")]
+        [HttpGet("{id:guid}/detalhes")]
         [ProducesResponseType(typeof(OcorrenciaDetalhesDTO), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
@@ -34,8 +38,8 @@ namespace SIG_DefesaCivil.API.Controllers
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                var ocorrenciaDto = await _ocorrenciaService.DetalhesEventosPorId(id, usuario);
-                ocorrenciaDto.Anexos = await _ocorrenciaService.GetAnexosDTOByEventoIdAsync(id);
+                var ocorrenciaDto = await _ocorrenciaService.OcorrenciaDetalheById(id, usuario);
+                ocorrenciaDto.Anexos = await _ocorrenciaService.GetAnexosDTOByOcorrenciaIdAsync(id);
 
                 return Ok(ocorrenciaDto);
             }
@@ -72,7 +76,7 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:guid}")]
         [Consumes("application/json")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -102,15 +106,15 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
-        [HttpGet("{id}/anexos")]
+        [HttpGet("{id:guid}/anexos")]
         [ProducesResponseType(typeof(IEnumerable<AnexoDTO>), 200)]
         public async Task<IActionResult> GetAnexos(string id)
         {
-            var anexos = await _ocorrenciaService.GetAnexosDTOByEventoIdAsync(id);
+            var anexos = await _ocorrenciaService.GetAnexosDTOByOcorrenciaIdAsync(id);
             return Ok(anexos);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:guid}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
@@ -132,7 +136,7 @@ namespace SIG_DefesaCivil.API.Controllers
             }
         }
 
-        [HttpGet("{id}/historico")]
+        [HttpGet("{id:guid}/historico")]
         public async Task<IActionResult> GetHistorico(string id)
         {
             var usuario = await _usuarioService.GetUsuarioAtual(User);
@@ -141,7 +145,7 @@ namespace SIG_DefesaCivil.API.Controllers
                 .Select(h => new HistoricoOcorrenciaDTO
                 {
                     Id = h.Id,
-                    EventoId = h.OcorrenciaId,
+                    OcorrenciaId = h.OcorrenciaId,
                     UsuarioId = h.UsuarioId,
                     Acao = h.Acao,
                     UltimaAlteracao = h.UltimaAlteracao
@@ -163,6 +167,36 @@ namespace SIG_DefesaCivil.API.Controllers
                                     .ToList();
 
             return Ok(statusOptions);
+        }
+        [HttpPost("alterar-etapa")]
+        public async Task<IActionResult> MovimentarOcorrencia([FromBody] MovimentacaoOcorrenciaDTO dto)
+        {
+            try
+            {
+                var usuario = await _userManager.GetUserAsync(User);
+                if (usuario == null) return Unauthorized();
+
+                await _ocorrenciaService.TransicionaOcorrencia(
+                    usuario,
+                    dto.OcorrenciaId,
+                    dto.EtapaAtualId,
+                    dto.EtapaDestinoId
+                );
+
+                return Ok(new { message = "Movimentação realizada com sucesso" });
+            }
+            catch (InvalidOperationException ex) // Regras de negócio violadas (ex: transição proibida)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro interno ao mover ocorrência.", details = ex.Message });
+            }
         }
     }
 }

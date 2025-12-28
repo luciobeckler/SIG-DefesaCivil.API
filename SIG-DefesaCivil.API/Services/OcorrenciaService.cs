@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Context;
 using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Eventos;
+using SIG_DefesaCivil.API.DTO.Ocorrencias;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
@@ -15,18 +16,21 @@ namespace SIG_DefesaCivil.API.Services
         private readonly IMapper _mapper;
         private readonly AnexoService _anexoService;
         private readonly EtapaService _etapaService;
+        private readonly UserManager<Usuario> _userManager;
 
         public OcorrenciaService(
             DefesaCivilDbContext context,
             IMapper mapper,
             AnexoService anexoService,
-            EtapaService etapaService
+            EtapaService etapaService,
+            UserManager<Usuario> userManager
             )
         {
             _context = context;
             _mapper = mapper;
             _anexoService = anexoService;
             _etapaService = etapaService;
+            _userManager = userManager;
         }
 
         public async Task<Ocorrencia> GetOcorrenciaPreviewById(string id)
@@ -42,7 +46,7 @@ namespace SIG_DefesaCivil.API.Services
             return ocorrencia;
         }
 
-        public async Task<OcorrenciaDetalhesDTO> DetalhesEventosPorId(string id, Usuario usuario)
+        public async Task<OcorrenciaDetalhesDTO> OcorrenciaDetalheById(string id, Usuario usuario)
         {
             var ocorrencia = await RecuperaEventoCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(ocorrencia.UsuarioCriadorId, usuario);
@@ -164,7 +168,8 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderByDescending(h => h.UltimaAlteracao)
                 .ToListAsync();
         }
-        public async Task<List<AnexoDTO>> GetAnexosDTOByEventoIdAsync(string ocorrenciaId)
+
+        public async Task<List<AnexoDTO>> GetAnexosDTOByOcorrenciaIdAsync(string ocorrenciaId)
         {
             var anexos = await _context.Anexos
                 .Where(a => a.EntidadeId == ocorrenciaId && a.TipoEntidade == "Evento")
@@ -174,6 +179,69 @@ namespace SIG_DefesaCivil.API.Services
             return _mapper.Map<List<AnexoDTO>>(anexos);
         }
 
+        public async Task TransicionaOcorrencia(Usuario usuario, string ocorrenciaId, string etapaAtualId, string etapaDestinoId)
+        {
+            var ocorrencia = await _context.Ocorrencia
+                .FirstOrDefaultAsync(o => o.Id == ocorrenciaId);
+            if (ocorrencia == null)
+                throw new KeyNotFoundException("Ocorrencia não encontrada");
+
+            var etapaAtual = await _etapaService.GetEtapaById(etapaAtualId);
+            var etapaDestino = await _etapaService.GetEtapaById(etapaDestinoId);
+
+            _etapaService.VerificaRegrasDeTransicao(usuario, ocorrencia, etapaAtual, etapaDestino);
+
+            etapaAtual.Ocorrencias.Remove(ocorrencia);
+            etapaDestino.Ocorrencias.Add(ocorrencia);
+            ocorrencia.DataEntradaNaFaseAtual = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+        }
+        public async Task ProcessarMovimentacoesAutomaticas()
+        {
+            var usuarioSistema = await _userManager.FindByEmailAsync("sistema@admin.com");
+
+            var etapasComPrazo = await _context.Etapas
+                .Where(e => e.MaxTempoNaEtapa != null && e.MaxTempoNaEtapa != TimeSpan.MaxValue)
+                .Include(e => e.Ocorrencias)
+                .ToListAsync();
+
+            foreach (var etapa in etapasComPrazo)
+            {
+                if (etapa.EtapasDestinoId == null || !etapa.EtapasDestinoId.Any())
+                {
+                    Console.WriteLine($"[AUTO SKIP] Etapa '{etapa.Nome}' tem prazo mas não tem etapa de destino configurada.");
+                    continue;
+                }
+
+                // Define o destino padrão (Assumimos o primeiro da lista como o fluxo natural)
+                var idEtapaDestino = etapa.EtapasDestinoId.First();
+
+                var prazo = etapa.MaxTempoNaEtapa.Value;
+
+                var ocorrenciasVencidas = etapa.Ocorrencias
+                    .Where(o => o.DataEntradaNaFaseAtual.HasValue &&
+                                o.DataEntradaNaFaseAtual.Value.Add(prazo) <= DateTime.Now)
+                    .ToList();
+
+                if (!ocorrenciasVencidas.Any()) continue;
+
+                Console.WriteLine($"[AUTO] Processando etapa '{etapa.Nome}': {ocorrenciasVencidas.Count} vencidas.");
+
+                foreach (var ocorrencia in ocorrenciasVencidas)
+                {
+                    try
+                    {
+                        await TransicionaOcorrencia(usuarioSistema, ocorrencia.Id, etapa.Id, idEtapaDestino);
+                        Console.WriteLine($"   -> Ocorrência {ocorrencia.Numero} movida para próxima etapa.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"   -> [ERRO] Falha ao mover {ocorrencia.Numero}: {ex.Message}");
+                    }
+                }
+            }
+        }
         private async Task AtualizaEventoPaiAsync(Ocorrencia ocorrenciaParaAtualizar, CreateOrEditOcorrenciaDTO dto)
         {
             await ValidarEventoPaiAsync(dto.OcorrenciaPaiId);
