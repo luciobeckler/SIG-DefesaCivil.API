@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Constants;
-using SIG_DefesaCivil.API.DTO.Quadros; // Ajuste o namespace se necessário
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Services;
 
 namespace SIG_DefesaCivil.API.Controllers

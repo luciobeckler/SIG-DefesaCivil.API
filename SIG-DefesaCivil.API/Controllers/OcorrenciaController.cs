@@ -2,9 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Ocorrencia;
-using SIG_DefesaCivil.API.DTO.Ocorrencias;
+using SIG_DefesaCivil.API.Data.DTO;
+using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;

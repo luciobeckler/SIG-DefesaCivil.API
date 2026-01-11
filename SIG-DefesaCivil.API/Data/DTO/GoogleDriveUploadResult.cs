@@ -1,4 +1,4 @@
-﻿namespace SIG_DefesaCivil.API.DTO
+﻿namespace SIG_DefesaCivil.API.Data.DTO
 {
     public class GoogleDriveUploadResult
     {

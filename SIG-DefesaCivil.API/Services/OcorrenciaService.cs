@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Ocorrencias;
+using SIG_DefesaCivil.API.Data.Context;
+using SIG_DefesaCivil.API.Data.DTO;
+using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
@@ -74,8 +74,6 @@ namespace SIG_DefesaCivil.API.Services
         {
             var ultimoNumeroDeProtocolo = await _context.Ocorrencia.MaxAsync(e => (int?)e.Numero) ?? 0;
 
-
-            ValidarHierarquiaUnica(dto);
             await ValidarEventoPaiAsync(dto.OcorrenciaPaiId);
             var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
@@ -103,7 +101,6 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task AtualizarAsync(string id, CreateOrEditOcorrenciaDTO dto, Usuario usuario)
         {
-            ValidarHierarquiaUnica(dto);
             var naturezasParaAssociar = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
             // --- 2. Busca da Entidade ---
@@ -357,22 +354,6 @@ namespace SIG_DefesaCivil.API.Services
             return ocorrencia;
         }
 
-        private void ValidarHierarquiaUnica(CreateOrEditOcorrenciaDTO dto)
-        {
-            var idDoPai = dto.OcorrenciaPaiId;
-            var idsDosSubEventos = dto.SubOcorrenciasId?.ToHashSet() ?? new HashSet<string>();
-
-            if (string.IsNullOrWhiteSpace(idDoPai) || idsDosSubEventos.Count == 0)
-            {
-                return;
-            }
-
-            if (idsDosSubEventos.Contains(idDoPai))
-            {
-                throw new InvalidOperationException($"O ocorrencia pai (ID: {idDoPai}) não pode ser listado simultaneamente como um sub-ocorrencia.");
-            }
-        }
-
         private async Task AssociaSubEventosNaCriacao(Ocorrencia novoEventoPai, CreateOrEditOcorrenciaDTO dto)
         {
             if (dto.SubOcorrenciasId != null && dto.SubOcorrenciasId.Any())
@@ -402,10 +383,12 @@ namespace SIG_DefesaCivil.API.Services
                 return new List<Natureza>();
             }
 
+            // 1. Busca as naturezas solicitadas
             var naturezas = await _context.Naturezas
                                    .Where(n => naturezasId.Contains(n.Id))
                                    .ToListAsync();
 
+            // 2. Valida se todos os IDs foram encontrados
             var uniqueRequestedIdsCount = naturezasId.Distinct().Count();
             if (naturezas.Count != uniqueRequestedIdsCount)
             {
@@ -413,6 +396,23 @@ namespace SIG_DefesaCivil.API.Services
                 var missingIds = naturezasId.Distinct().Where(id => !foundIds.Contains(id));
 
                 throw new ArgumentException($"As seguintes IDs de naturezas não foram encontradas: {string.Join(", ", missingIds)}");
+            }
+
+            var idsSelecionados = naturezas.Select(n => n.Id).ToList();
+
+            var paisInvalidos = await _context.Naturezas
+                .Where(n => n.NaturezaPaiId != null && idsSelecionados.Contains(n.NaturezaPaiId))
+                .Select(n => n.NaturezaPaiId)
+                .Distinct()
+                .ToListAsync();
+
+            if (paisInvalidos.Any())
+            {
+                var nomesInvalidos = naturezas
+                    .Where(n => paisInvalidos.Contains(n.Id))
+                    .Select(n => n.Nome);
+
+                throw new ArgumentException($"As seguintes naturezas são categorias e não podem ser selecionadas: {string.Join(", ", nomesInvalidos)}");
             }
 
             return naturezas;

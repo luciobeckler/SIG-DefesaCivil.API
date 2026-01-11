@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Constants;
-using SIG_DefesaCivil.API.DTO.Etapas; // Ajuste o namespace se necessário
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 

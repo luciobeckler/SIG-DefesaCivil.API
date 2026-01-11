@@ -1,6 +1,9 @@
-﻿using SIG_DefesaCivil.API.DTOs;
+﻿using SIG_DefesaCivil.API.Data.DTO;
+using SIG_DefesaCivil.API.Enums;
+using SIG_DefesaCivil.API.ValidationAttributes;
+using System.ComponentModel.DataAnnotations;
 
-namespace SIG_DefesaCivil.API.DTO.Ocorrencias
+namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
 {
     // --- DTO Base (Campos Compartilhados) ---
     public abstract class OcorrenciaDadosBaseDTO
@@ -38,25 +41,54 @@ namespace SIG_DefesaCivil.API.DTO.Ocorrencias
     public class CreateOrEditOcorrenciaDTO : OcorrenciaDadosBaseDTO
     {
 
-        // Campos Single-Select (Recebe como string do Front)
+        [Required(ErrorMessage = "O Grau de Risco é obrigatório.")]
+        [EnumDataType(typeof(EGrauRisco), ErrorMessage = "Valor inválido para Grau de Risco.")]
         public string GrauDeRisco { get; set; }
+
+        [EnumDataType(typeof(ERegimeOcupacao), ErrorMessage = "Valor inválido para Regime de Ocupação.")]
         public string? RegimeDeOcupacaoDoImovel { get; set; }
 
-        // Campos Multi-Select (Recebe como Lista de Strings)
-        // O AutoMapper/Controller irá converter de List<string> para List<Enum>
+        // --- Validações de Lista de Enums ---
+
+        [EnumList(typeof(EAnalisePreliminar))]
         public List<string>? AnalisePreliminar { get; set; } = new();
+
+        [EnumList(typeof(ECaracterizacaoLocal))]
         public List<string>? CaracterizacaoDoLocal { get; set; } = new();
+
+        [EnumList(typeof(ETipoEdificacao))]
         public List<string>? Edificacao { get; set; } = new();
+
+        [EnumList(typeof(ETipoEstrutura))]
         public List<string>? Estrutura { get; set; } = new();
+
+        [EnumList(typeof(ETipoRisco))]
         public List<string>? TipoDeRisco { get; set; } = new();
+
+        [EnumList(typeof(ETipificacaoOcorrencia))]
         public List<string>? TipificacaoDaOcorrencia { get; set; } = new();
+
+        [EnumList(typeof(EMotivacao))]
         public List<string>? Motivacao { get; set; } = new();
+
+        [EnumList(typeof(EAreaAfetada))]
         public List<string>? AreasAfetadas { get; set; } = new();
 
         // Relacionamentos
-        public string? OcorrenciaPaiId { get; set; } // Renomeado de EventoPaiId para OcorrenciaPaiId para bater com o Model
+        public string? OcorrenciaPaiId { get; set; }
         public List<string>? SubOcorrenciasId { get; set; } = new List<string>();
         public List<string>? NaturezasId { get; set; } = new List<string>();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrWhiteSpace(OcorrenciaPaiId) && SubOcorrenciasId != null && SubOcorrenciasId.Contains(OcorrenciaPaiId))
+            {
+                yield return new ValidationResult(
+                    $"A Ocorrência Pai (ID: {OcorrenciaPaiId}) não pode ser listada simultaneamente como uma sub-ocorrência.",
+                    new[] { nameof(OcorrenciaPaiId), nameof(SubOcorrenciasId) }
+                );
+            }
+        }
     }
 
     // --- DTO de Saída (Detalhes Completo) ---

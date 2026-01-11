@@ -3,12 +3,11 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 using System.Linq.Expressions;
 
-namespace SIG_DefesaCivil.API.Context
+namespace SIG_DefesaCivil.API.Data.Context
 {
     public class DefesaCivilDbContext : IdentityDbContext<Usuario, IdentityRole, string>
     {
@@ -22,6 +21,7 @@ namespace SIG_DefesaCivil.API.Context
         public DbSet<Anexo> Anexos { get; set; }
         public DbSet<Quadro> Quadros { get; set; }
         public DbSet<Etapa> Etapas { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,14 +47,14 @@ namespace SIG_DefesaCivil.API.Context
                 // --- CONFIGURAÇÃO AVANÇADA DE MULTI-SELECT (Com Comparadores) ---
                 // Especificando tipos explicitamente <Ocorrencia, TEnum> para evitar erro de inferência
 
-                ConfigureEnumList<Ocorrencia, EAnalisePreliminar>(entity, e => e.AnalisePreliminar);
-                ConfigureEnumList<Ocorrencia, ECaracterizacaoLocal>(entity, e => e.CaracterizacaoDoLocal);
-                ConfigureEnumList<Ocorrencia, ETipoEdificacao>(entity, e => e.Edificacao);
-                ConfigureEnumList<Ocorrencia, ETipoEstrutura>(entity, e => e.Estrutura);
-                ConfigureEnumList<Ocorrencia, ETipoRisco>(entity, e => e.TipoDeRisco);
-                ConfigureEnumList<Ocorrencia, ETipificacaoOcorrencia>(entity, e => e.TipificacaoDaOcorrencia);
-                ConfigureEnumList<Ocorrencia, EMotivacao>(entity, e => e.Motivacao);
-                ConfigureEnumList<Ocorrencia, EAreaAfetada>(entity, e => e.AreasAfetadas);
+                ConfigureEnumList(entity, e => e.AnalisePreliminar);
+                ConfigureEnumList(entity, e => e.CaracterizacaoDoLocal);
+                ConfigureEnumList(entity, e => e.Edificacao);
+                ConfigureEnumList(entity, e => e.Estrutura);
+                ConfigureEnumList(entity, e => e.TipoDeRisco);
+                ConfigureEnumList(entity, e => e.TipificacaoDaOcorrencia);
+                ConfigureEnumList(entity, e => e.Motivacao);
+                ConfigureEnumList(entity, e => e.AreasAfetadas);
 
                 // Single Selects (salvar como string)
                 entity.Property(e => e.GrauDeRisco).HasConversion<string>();
@@ -110,8 +110,15 @@ namespace SIG_DefesaCivil.API.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Nome).IsRequired().HasMaxLength(100);
 
-                // CORREÇÃO PRINCIPAL: Tipagem explícita <Etapa, ECargos>
-                ConfigureEnumList<Etapa, ECargos>(entity, e => e.PermissoesParaTransicionarParaEstaEtapa);
+                ConfigureEnumList(entity, e => e.PermissoesParaTransicionarParaEstaEtapa);
+            });
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasOne<Usuario>()
+                      .WithMany()
+                      .HasForeignKey(rt => rt.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
 

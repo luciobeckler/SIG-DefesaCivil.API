@@ -7,6 +7,7 @@ namespace SIG_DefesaCivil.API.Models
         public string Id { get; set; }
         public string Nome { get; set; }
         public string CodigoNatureza { get; set; }
+        public string? Descricao { get; set; }
 
         // Auto-relação de hierarquia
         public string? NaturezaPaiId { get; set; }

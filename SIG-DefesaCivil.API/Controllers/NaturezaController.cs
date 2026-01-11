@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Constants;
-using SIG_DefesaCivil.API.DTOs;
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
@@ -72,12 +72,12 @@ namespace SIG_DefesaCivil.API.Controllers
         }
 
 
-        [HttpDelete("{codigo}")]
-        public async Task<IActionResult> DeleteNatureza(string codigo)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNatureza(string id)
         {
             try
             {
-                var deleted = await _service.DeleteAsync(codigo);
+                var deleted = await _service.DeleteAsync(id);
                 if (!deleted) return NotFound();
                 return NoContent();
             }

@@ -1,4 +1,4 @@
-﻿namespace SIG_DefesaCivil.API.DTO.Ocorrencias
+﻿namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
 {
     public class HistoricoOcorrenciaDTO
     {

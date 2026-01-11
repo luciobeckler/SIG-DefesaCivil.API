@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using SIG_DefesaCivil.API.DTO;
-using SIG_DefesaCivil.API.DTO.Etapas;
-using SIG_DefesaCivil.API.DTO.Ocorrencias;
-using SIG_DefesaCivil.API.DTO.Quadros;
-using SIG_DefesaCivil.API.DTOs; // NaturezaDTOs gerais
+using SIG_DefesaCivil.API.Data.DTO;
+using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia; // Namespace da entidade Ocorrencia

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Models;
 using System.Security.Claims;
 
@@ -7,9 +8,12 @@ namespace SIG_DefesaCivil.API.Services
     public class UsuarioService
     {
         private readonly UserManager<Usuario> _userManager;
-        public UsuarioService(UserManager<Usuario> userManager)
+        private readonly DefesaCivilDbContext _context;
+
+        public UsuarioService(UserManager<Usuario> userManager, DefesaCivilDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         public async Task<Usuario> GetUsuarioAtual(ClaimsPrincipal User)

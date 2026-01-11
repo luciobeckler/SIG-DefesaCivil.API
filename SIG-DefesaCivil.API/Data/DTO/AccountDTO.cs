@@ -1,10 +1,11 @@
-﻿namespace SIG_DefesaCivil.API.DTO
+﻿namespace SIG_DefesaCivil.API.Data.DTO
 {
     public class LoginDTO
     {
-        public string Email { get; set; } = null!;
-        public string Senha { get; set; } = null!;
+        public string Email { get; set; }
+        public string Senha { get; set; }
     }
+
     public class RegisterDTO
     {
         public string Nome { get; set; }
@@ -19,7 +20,13 @@
         public string? Endereco { get; set; }
         public string? DataDeNascimento { get; set; }
     }
-    public class AccountDTO
+
+    public class LogoutDTO
+    {
+        public string RefreshToken { get; set; }
+    }
+
+    public class AlterarSenhaDTO
     {
         public string NovaSenha { get; set; }
     }

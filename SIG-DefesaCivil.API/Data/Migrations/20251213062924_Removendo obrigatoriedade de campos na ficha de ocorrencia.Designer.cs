@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SIG_DefesaCivil.API.Context;
+using SIG_DefesaCivil.API.Data.Context;
 
 #nullable disable
 
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    [Migration("20251213211602_corrigindo tipagens das listas")]
-    partial class corrigindotipagensdaslistas
+    [Migration("20251213062924_Removendo obrigatoriedade de campos na ficha de ocorrencia")]
+    partial class Removendoobrigatoriedadedecamposnafichadeocorrencia
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -220,6 +220,62 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.ToTable("Anexos", (string)null);
                 });
 
+            modelBuilder.Entity("SIG_DefesaCivil.API.Models.Civil", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CPF")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RG")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Telefone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Civis", (string)null);
+                });
+
+            modelBuilder.Entity("SIG_DefesaCivil.API.Models.Endereco", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Bairro")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CEP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Complemento")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rua")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Enderecos", (string)null);
+                });
+
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Etapa", b =>
                 {
                     b.Property<string>("Id")
@@ -286,18 +342,15 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("AnalisePreliminar")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("AreasAfetadas")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CaracterizacaoDoLocal")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("DataEHoraDoOcorrido")
+                    b.Property<DateTime>("DataEHoraDoOcorrido")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataEHoraInicioAtendimento")
@@ -310,26 +363,12 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Edificacao")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EnderecoBairro")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoCEP")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoComplemento")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoNumero")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnderecoRua")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("EnderecoId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Estrutura")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EtapaId")
@@ -340,7 +379,6 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Motivacao")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Numero")
@@ -379,21 +417,13 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<string>("RegimeDeOcupacaoDoImovel")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SolicitanteCPF")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SolicitanteNome")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SolicitanteRG")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("SolicitanteId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("TipificacaoDaOcorrencia")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TipoDeRisco")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UsuarioCriadorId")
@@ -405,9 +435,13 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EnderecoId");
+
                     b.HasIndex("EtapaId");
 
                     b.HasIndex("OcorrenciaPaiId");
+
+                    b.HasIndex("SolicitanteId");
 
                     b.HasIndex("UsuarioCriadorId");
 
@@ -654,6 +688,10 @@ namespace SIG_DefesaCivil.API.Migrations
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Models.Ocorrencia.Ocorrencia", b =>
                 {
+                    b.HasOne("SIG_DefesaCivil.API.Models.Endereco", "Endereco")
+                        .WithMany()
+                        .HasForeignKey("EnderecoId");
+
                     b.HasOne("SIG_DefesaCivil.API.Models.Etapa", "Etapa")
                         .WithMany("Ocorrencias")
                         .HasForeignKey("EtapaId")
@@ -665,15 +703,23 @@ namespace SIG_DefesaCivil.API.Migrations
                         .HasForeignKey("OcorrenciaPaiId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIG_DefesaCivil.API.Models.Civil", "Solicitante")
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId");
+
                     b.HasOne("SIG_DefesaCivil.API.Models.Usuario", "UsuarioCriador")
                         .WithMany("OcorrenciasCriados")
                         .HasForeignKey("UsuarioCriadorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Endereco");
+
                     b.Navigation("Etapa");
 
                     b.Navigation("OcorrenciaPai");
+
+                    b.Navigation("Solicitante");
 
                     b.Navigation("UsuarioCriador");
                 });

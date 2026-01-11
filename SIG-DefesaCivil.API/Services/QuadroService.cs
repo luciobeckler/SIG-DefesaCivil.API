@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTO.Quadros;
+using SIG_DefesaCivil.API.Data.Context;
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services

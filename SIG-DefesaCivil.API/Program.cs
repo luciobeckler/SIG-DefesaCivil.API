@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SIG_DefesaCivil.API.Context;
+using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
@@ -24,7 +24,11 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Adicione esta linha:
+    c.SchemaFilter<SIG_DefesaCivil.API.Helper.EnumListSchemaFilter>();
+});
 
 // Configurando banco de dados com Entity Framework Core e SQL Server
 var connectionName = builder.Environment.IsDevelopment() ? "DevConnection" : "ProdConnection";
@@ -42,6 +46,8 @@ builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<AnexoService>();
 builder.Services.AddSingleton<GoogleDriveService>();
 builder.Services.AddHostedService<AutomacaoMovimentacaoWorker>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<AuthService>();
 
 //Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
@@ -71,27 +77,27 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        // Valida se quem assinou foi este servidor mesmo
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+
+        // Validação de Emissor (Issuer) e Publico (Audience)
+        // DICA: Em desenvolvimento, as vezes é útil deixar false se estiver tendo problemas com URLs
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+
+        // Certifique-se que no appsettings.json estes valores batem EXATAMENTE 
+        // com o que está sendo gerado no TokenService
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+
+        // Tolerância de tempo para clocks desincronizados (opcional, padrão é 5min)
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
 
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var token = context.Request.Cookies["auth_token"];
-            if (!string.IsNullOrEmpty(token))
-            {
-                context.Token = token;
-            }
-            return Task.CompletedTask;
-        }
-    };
+    // REMOVIDO: options.Events = new JwtBearerEvents { ... }
+    // Agora o .NET vai buscar automaticamente no Header "Authorization: Bearer <token>"
 });
 
 // Configuração de CORS
@@ -118,7 +124,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 // Services e repositorys
-builder.Services.AddScoped<JwtTokenGenerator>();
+builder.Services.AddScoped<TokenService>();
 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 builder.Services.AddAutoMapper(cfg =>
 {
@@ -206,6 +212,9 @@ using (var scope = app.Services.CreateScope())
             await userManager.AddToRoleAsync(newSistema, nameof(ECargos.Administrador));
         }
     }
+
+    var dbContext = scope.ServiceProvider.GetRequiredService<DefesaCivilDbContext>();
+    await CobradeSeeder.Seed(dbContext);
 }
 
 app.Run();

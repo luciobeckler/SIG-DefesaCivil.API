@@ -1,8 +1,8 @@
-﻿using SIG_DefesaCivil.API.DTO.Ocorrencias;
+﻿using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace SIG_DefesaCivil.API.DTO.Etapas
+namespace SIG_DefesaCivil.API.Data.DTO
 {
     public class EtapaDTO : EtapaBaseDTO
     {

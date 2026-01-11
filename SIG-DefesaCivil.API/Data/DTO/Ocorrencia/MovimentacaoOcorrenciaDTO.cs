@@ -1,4 +1,4 @@
-﻿namespace SIG_DefesaCivil.API.DTO.Ocorrencia
+﻿namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
 {
     public class MovimentacaoOcorrenciaDTO
     {

@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTOs;
+using SIG_DefesaCivil.API.Data.Context;
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services
@@ -105,11 +105,11 @@ namespace SIG_DefesaCivil.API.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string codigo)
+        public async Task<bool> DeleteAsync(string id)
         {
             var natureza = await _context.Naturezas
                 .Include(n => n.SubNaturezas)
-                .FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
+                .FirstOrDefaultAsync(n => n.Id == id);
 
             if (natureza is null) return false;
 
@@ -156,7 +156,7 @@ namespace SIG_DefesaCivil.API.Services
             {
                 var subCompleta = await _context.Naturezas
                     .Include(x => x.SubNaturezas)
-                    .FirstOrDefaultAsync(x => x.CodigoNatureza == sub.CodigoNatureza);
+                    .FirstOrDefaultAsync(x => x.Id == sub.Id);
 
                 if (subCompleta is null) continue;
 

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SIG_DefesaCivil.API.DTO.Quadros
+namespace SIG_DefesaCivil.API.Data.DTO
 {
     public class QuadroDTO
     {
@@ -18,6 +18,6 @@ namespace SIG_DefesaCivil.API.DTO.Quadros
 
     public class QuadroDetalhesDTO : QuadroDTO
     {
-        public List<Etapas.EtapaDTO> Etapas { get; set; } = new List<Etapas.EtapaDTO>();
+        public List<EtapaDTO> Etapas { get; set; } = new List<EtapaDTO>();
     }
 }
