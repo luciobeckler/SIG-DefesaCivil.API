@@ -37,20 +37,18 @@ builder.Services.AddSwaggerGen(c =>
     c.SchemaFilter<SIG_DefesaCivil.API.Helper.EnumListSchemaFilter>();
 });
 
-// Configurando banco de dados com Entity Framework Core e SQL Server
 string connectionName;
 
 if (builder.Environment.IsDevelopment())
 {
     connectionName = "DevConnection";
 }
-else if (builder.Environment.IsStaging()) // Verifica se é "Staging"
+else if (builder.Environment.IsStaging())
 {
     connectionName = "StagingConnection";
 }
 else
 {
-    // Assume produção para qualquer outro caso
     connectionName = "ProdConnection";
 }
 

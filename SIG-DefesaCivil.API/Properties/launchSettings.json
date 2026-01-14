@@ -9,32 +9,49 @@
     }
   },
   "profiles": {
-    "http": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:5272",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Staging"
-      }
-    },
-    "https": {
+    // 1. Perfil Padrão de DESENVOLVIMENTO (Use este para codar no dia a dia)
+    "Ambiente Dev": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7233;http://localhost:5272",
       "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+
+    // 2. Perfil para simular STAGING (Use este para testar antes de subir)
+    "Ambiente Staging": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5273",
+      "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Staging"
       }
     },
+
+    // 3. Perfil para simular PRODUÇÃO (Use para ver como o usuário final verá erros)
+    "Ambiente Prod": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger", // Swagger geralmente não abre em prod, bom para testar
+      "applicationUrl": "http://localhost:5274",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    },
+
+    // IIS Express (Geralmente Development)
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Staging"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }
