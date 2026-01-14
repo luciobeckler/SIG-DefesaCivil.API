@@ -1,4 +1,5 @@
-﻿using SIG_DefesaCivil.API.Context;
+﻿using Microsoft.EntityFrameworkCore;
+using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
@@ -6,7 +7,10 @@ public class AnexoService
 {
     private readonly GoogleDriveService _googleDriveService;
     private readonly DefesaCivilDbContext _context;
-    private readonly int MaxFileSize = 5000000;
+    private readonly long MaxFileSize = 5 * 1024 * 1024;
+
+    // Lista de tipos permitidos para segurança
+    private readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "application/pdf" };
 
     public AnexoService(GoogleDriveService googleDriveService, DefesaCivilDbContext context)
     {
@@ -14,39 +18,99 @@ public class AnexoService
         _context = context;
     }
 
-    public async Task<Anexo> SalvarAnexoAsync(IFormFile arquivo, string entidadeId, string tipoEntidade)
+    public async Task<List<Anexo>> SalvarAnexosEmLoteAsync(List<IFormFile> arquivos, string entidadeId, string tipoEntidade)
     {
-        // 1. Validações (tamanho, tipo, etc. - como antes)
-        // ... (if arquivo.Length > MaxFileSize...) ...
-        if (arquivo.Length > MaxFileSize)
-            throw new ArgumentException("O arquivo excede o tamanho máximo permitido");
+        var anexosParaSalvar = new List<Anexo>();
 
-        // 2. Salva no Google Drive
-        var uploadResult = await _googleDriveService.UploadFileAsync(arquivo);
-
-        var anexo = new Anexo
+        // 1. Validação Prévia (Fail Fast)
+        foreach (var arquivo in arquivos)
         {
-            NomeOriginal = arquivo.FileName,
-            UrlArmazenamento = uploadResult.WebViewLink,
-            IdArquivoExterno = uploadResult.FileId,
-            TipoConteudo = arquivo.ContentType,
-            TamanhoBytes = arquivo.Length,
-            EntidadeId = entidadeId, 
-            TipoEntidade = tipoEntidade
-        };
+            if (arquivo.Length > MaxFileSize)
+                throw new ArgumentException($"O arquivo {arquivo.FileName} excede 5MB.");
 
-        _context.Anexos.Add(anexo);
+            if (!AllowedMimeTypes.Contains(arquivo.ContentType))
+                throw new ArgumentException($"Tipo de arquivo não permitido: {arquivo.ContentType}");
+        }
 
-        return anexo;
+        // 2. Upload Paralelo para o Google Drive
+        // Criamos uma lista de Tasks, mas não rodamos o await ainda
+        var uploadTasks = arquivos.Select(async arquivo =>
+        {
+            var result = await _googleDriveService.UploadFileAsync(arquivo);
+            return new Anexo
+            {
+                Id = Guid.NewGuid().ToString(),
+                NomeOriginal = arquivo.FileName,
+                UrlArmazenamento = result.WebViewLink,
+                IdArquivoExterno = result.FileId,
+                TipoConteudo = arquivo.ContentType,
+                TamanhoBytes = arquivo.Length,
+                EntidadeId = entidadeId,
+                TipoEntidade = tipoEntidade,
+                DataUpload = DateTime.UtcNow
+            };
+        });
+
+        try
+        {
+            // Executa todos os uploads simultaneamente e aguarda
+            var resultados = await Task.WhenAll(uploadTasks);
+            anexosParaSalvar.AddRange(resultados);
+
+            // 3. Salvar metadados no Banco de Dados
+            await _context.Anexos.AddRangeAsync(anexosParaSalvar);
+            await _context.SaveChangesAsync();
+
+            return anexosParaSalvar;
+        }
+        catch (Exception ex)
+        {
+            // ROLLBACK MANUAL: Se der erro no banco ou em algum upload, 
+            // precisamos apagar os arquivos que porventura subiram para o Drive.
+            var idsParaApagar = anexosParaSalvar.Select(a => a.IdArquivoExterno).Where(id => !string.IsNullOrEmpty(id));
+            foreach (var idDrive in idsParaApagar)
+            {
+                await _googleDriveService.DeleteFileAsync(idDrive); // Fire and forget ou await seguro
+            }
+            throw new Exception("Falha ao salvar anexos. Operação cancelada.", ex);
+        }
     }
 
-    public async Task ExcluirAnexoAsync(string anexoId)
+    public async Task RemoverAnexosAsync(string entidadeTipo, string entidadeId, List<string> idsAnexosParaRemover)
     {
-        var anexo = await _context.Anexos.FindAsync(anexoId);
-        if (anexo == null) return;
+        if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any()) return;
 
-        await _googleDriveService.DeleteFileAsync(anexo.IdArquivoExterno);
+        var anexos = await _context.Anexos
+            .Where(a => idsAnexosParaRemover.Contains(a.Id)
+                     && a.EntidadeId == entidadeId
+                     && a.TipoEntidade == entidadeTipo)
+            .ToListAsync();
 
-        _context.Anexos.Remove(anexo);
+        if (!anexos.Any()) return;
+
+        // Estratégia Segura: 
+        // 1. Remove do Banco PRIMEIRO. Se falhar aqui, o arquivo fica "falso" no drive, mas o sistema não quebra.
+        // Se remover do Drive primeiro e o banco falhar, o usuário vê o anexo na tela mas o link não abre (pior UX).
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.Anexos.RemoveRange(anexos);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw; // Não continua para deletar do Drive
+        }
+
+        // 2. Agora que saiu do banco, remove do Drive (Operação de limpeza)
+        // Usamos Task.WhenAll para ser rápido
+        var tasksDelecao = anexos
+            .Where(x => !string.IsNullOrEmpty(x.IdArquivoExterno))
+            .Select(a => _googleDriveService.DeleteFileAsync(a.IdArquivoExterno));
+
+        await Task.WhenAll(tasksDelecao);
     }
 }

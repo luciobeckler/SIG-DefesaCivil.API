@@ -1,8 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Context;
-using SIG_DefesaCivil.API.DTOs;
-using SIG_DefesaCivil.API.Helper;
+using SIG_DefesaCivil.API.Data.Context;
+using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services
@@ -20,7 +19,7 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task<List<NaturezaDTO>> GetAllAsync()
         {
-            var todasNaturezas = await _context.Natureza
+            var todasNaturezas = await _context.Naturezas
                 .Include(n => n.SubNaturezas)
                 .ToListAsync();
 
@@ -37,13 +36,13 @@ namespace SIG_DefesaCivil.API.Services
             var natureza = await ObterNaturezaPorCodigo(codigo);
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
-            
+
             return _mapper.Map<NaturezaDTO>(natureza);
         }
 
         public async Task<NaturezaDTO> GetByIdAsync(string id)
         {
-            var natureza = await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
+            var natureza = await _context.Naturezas.FirstOrDefaultAsync(n => n.Id == id);
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
 
@@ -69,7 +68,7 @@ namespace SIG_DefesaCivil.API.Services
             natureza.Id = Guid.NewGuid().ToString();
             natureza.NaturezaPaiId = naturezaPaiId;
 
-            _context.Natureza.Add(natureza);
+            _context.Naturezas.Add(natureza);
             await _context.SaveChangesAsync();
 
             return _mapper.Map<NaturezaDTO>(natureza);
@@ -80,7 +79,7 @@ namespace SIG_DefesaCivil.API.Services
             var natureza = await ObterNaturezaPorId(id);
             if (natureza is null) return false;
 
-            var codigoEmUso = await _context.Natureza
+            var codigoEmUso = await _context.Naturezas
                 .AnyAsync(n => n.CodigoNatureza == dto.CodigoNatureza && n.Id != id);
 
             if (codigoEmUso)
@@ -106,16 +105,16 @@ namespace SIG_DefesaCivil.API.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string codigo)
+        public async Task<bool> DeleteAsync(string id)
         {
-            var natureza = await _context.Natureza
+            var natureza = await _context.Naturezas
                 .Include(n => n.SubNaturezas)
-                .FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
+                .FirstOrDefaultAsync(n => n.Id == id);
 
             if (natureza is null) return false;
 
             await RemoverSubNaturezasRecursivamente(natureza);
-            _context.Natureza.Remove(natureza);
+            _context.Naturezas.Remove(natureza);
 
             await _context.SaveChangesAsync();
             return true;
@@ -124,10 +123,10 @@ namespace SIG_DefesaCivil.API.Services
         public async Task<List<NaturezaDTO>> GetIrmasAsync(string codigo)
         {
             var natureza = await ObterNaturezaPorCodigo(codigo);
-            if (natureza is null) 
+            if (natureza is null)
                 return new List<NaturezaDTO>();
 
-            var irmas = await _context.Natureza
+            var irmas = await _context.Naturezas
                 .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != natureza.Id)
                 .ToListAsync();
 
@@ -136,7 +135,7 @@ namespace SIG_DefesaCivil.API.Services
 
         private async Task ValidarCodigoDuplicado(string codigo)
         {
-            var duplicado = await _context.Natureza
+            var duplicado = await _context.Naturezas
                 .AnyAsync(n => n.CodigoNatureza == codigo);
 
             if (duplicado)
@@ -144,10 +143,10 @@ namespace SIG_DefesaCivil.API.Services
         }
 
         private async Task<Natureza?> ObterNaturezaPorId(string id) =>
-            await _context.Natureza.FirstOrDefaultAsync(n => n.Id == id);
+            await _context.Naturezas.FirstOrDefaultAsync(n => n.Id == id);
 
         private async Task<Natureza?> ObterNaturezaPorCodigo(string codigo) =>
-            await _context.Natureza.FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
+            await _context.Naturezas.FirstOrDefaultAsync(n => n.CodigoNatureza == codigo);
 
         private async Task RemoverSubNaturezasRecursivamente(Natureza n)
         {
@@ -155,14 +154,14 @@ namespace SIG_DefesaCivil.API.Services
 
             foreach (var sub in n.SubNaturezas.ToList())
             {
-                var subCompleta = await _context.Natureza
+                var subCompleta = await _context.Naturezas
                     .Include(x => x.SubNaturezas)
-                    .FirstOrDefaultAsync(x => x.CodigoNatureza == sub.CodigoNatureza);
+                    .FirstOrDefaultAsync(x => x.Id == sub.Id);
 
                 if (subCompleta is null) continue;
 
                 await RemoverSubNaturezasRecursivamente(subCompleta);
-                _context.Natureza.Remove(subCompleta);
+                _context.Naturezas.Remove(subCompleta);
             }
         }
     }
