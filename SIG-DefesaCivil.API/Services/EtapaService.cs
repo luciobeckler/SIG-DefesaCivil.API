@@ -94,7 +94,7 @@ namespace SIG_DefesaCivil.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task AdicionaEventoNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string quadroId)
+        public async Task AdicionaOcorrenciaNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string quadroId)
         {
             var primeiraEtapa = await _context.Etapas
                 .Where(e => e.QuadroId == quadroId)

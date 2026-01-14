@@ -1,3 +1,8 @@
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Drive.v3;
+using Google.Apis.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +17,8 @@ using SIG_DefesaCivil.API.TokenGenerator;
 using SIG_DefesaCivil.API.Workers;
 using System.Text;
 using System.Text.Json.Serialization;
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,11 +38,26 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configurando banco de dados com Entity Framework Core e SQL Server
-var connectionName = builder.Environment.IsDevelopment() ? "DevConnection" : "ProdConnection";
+string connectionName;
+
+if (builder.Environment.IsDevelopment())
+{
+    connectionName = "DevConnection";
+}
+else if (builder.Environment.IsStaging()) // Verifica se é "Staging"
+{
+    connectionName = "StagingConnection";
+}
+else
+{
+    // Assume produção para qualquer outro caso
+    connectionName = "ProdConnection";
+}
+
 var connectionString = builder.Configuration.GetConnectionString(connectionName);
 
 builder.Services.AddDbContext<DefesaCivilDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 // Registrando services
 builder.Services.AddScoped<NaturezaService>();
@@ -44,10 +66,42 @@ builder.Services.AddScoped<QuadroService>();
 builder.Services.AddScoped<EtapaService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<AnexoService>();
-builder.Services.AddSingleton<GoogleDriveService>();
 builder.Services.AddHostedService<AutomacaoMovimentacaoWorker>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
+
+builder.Services.AddSingleton<DriveService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var clientSecrets = new ClientSecrets
+    {
+        ClientId = config["GoogleDrive:ClientId"],
+        ClientSecret = config["GoogleDrive:ClientSecret"]
+    };
+
+    var token = new TokenResponse
+    {
+        RefreshToken = config["GoogleDrive:RefreshToken"]
+    };
+
+    var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+    {
+        ClientSecrets = clientSecrets,
+        Scopes = new[] { DriveService.Scope.Drive }
+    });
+
+    var credential = new UserCredential(flow, "user", token);
+
+    return new DriveService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = credential,
+        ApplicationName = "SIG-DefesaCivil-API"
+    });
+});
+
+// 2. Registrar seu wrapper como Scoped (Um por requisição)
+builder.Services.AddScoped<GoogleDriveService>();
 
 //Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
@@ -103,7 +157,7 @@ builder.Services.AddAuthentication(options =>
 // Configuração de CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendPolicy", policy =>
+    options.AddPolicy("LocalPolicy", policy =>
     {
         policy.WithOrigins(
                 "http://localhost:8100",
@@ -112,6 +166,14 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
+    });
+
+    options.AddPolicy("StaggingPolicy", policy =>
+    {
+        policy.AllowAnyMethod()
+        .AllowCredentials()
+        .AllowAnyHeader()
+        .SetIsOriginAllowed(origin => true);
     });
 });
 
@@ -143,7 +205,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseCors("FrontendPolicy");
+app.UseCors("LocalPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
