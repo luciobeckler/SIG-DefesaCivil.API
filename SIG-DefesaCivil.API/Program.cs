@@ -203,7 +203,19 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseCors("LocalPolicy");
+if (builder.Environment.IsDevelopment())
+{
+    app.UseCors("LocalPolicy");
+}
+else if (builder.Environment.IsStaging())
+{
+    app.UseCors("StaggingPolicy");
+}
+else
+{
+    app.UseCors("StaggingPolicy");
+}
+
 
 app.UseAuthentication();
 app.UseAuthorization();
