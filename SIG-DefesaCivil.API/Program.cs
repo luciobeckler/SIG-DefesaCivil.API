@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SIG_DefesaCivil.API.Data;
 using SIG_DefesaCivil.API.Data.Context;
-using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
@@ -224,69 +224,21 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
-
-    var cargos = Enum.GetValues<ECargos>();
-    foreach (var cargo in cargos)
+    var services = scope.ServiceProvider;
+    try
     {
-        var roleName = cargo.ToString();
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-    }
+        // Chamada única que resolve tudo
+        await Seeder.SeedAllAsync(services);
 
-    var adminEmail = "admin@teste.com";
-    var admin = await userManager.FindByEmailAsync(adminEmail);
-    if (admin == null)
+        // Log de sucesso opcional
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Banco de dados populado com sucesso (Roles, Users, Quadros, Naturezas).");
+    }
+    catch (Exception ex)
     {
-        Usuario newAdmin = new Usuario
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            Nome = "Lúcio Beckler Passos",
-            Telefone = "31985211711",
-            CPF = "14485403645",
-            Cargo = nameof(ECargos.Administrador),
-            DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
-            isAtivo = true,
-            isPrimeiroAcesso = false
-        };
-
-        var result = await userManager.CreateAsync(newAdmin, "SenhaForte123!");
-        if (result.Succeeded)
-            await userManager.AddToRoleAsync(newAdmin, nameof(ECargos.Administrador));
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados.");
     }
-
-    // 3. Criação do Usuário SISTEMA (Para o Worker de Automação)
-    var sistemaEmail = "sistema@admin.com";
-    var sistemaUser = await userManager.FindByEmailAsync(sistemaEmail);
-    if (sistemaUser == null)
-    {
-        Usuario newSistema = new Usuario
-        {
-            UserName = sistemaEmail,
-            Email = sistemaEmail,
-            Nome = "Sistema Automático",
-            Telefone = "00000000000",
-            CPF = "00000000000",
-            Cargo = nameof(ECargos.Administrador),
-            DataAdmissao = DateOnly.FromDateTime(DateTime.Now),
-            isAtivo = true,
-            isPrimeiroAcesso = false
-        };
-
-
-        var result = await userManager.CreateAsync(newSistema, "Sistema#Auto2025!");
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(newSistema, nameof(ECargos.Administrador));
-        }
-    }
-
-    var dbContext = scope.ServiceProvider.GetRequiredService<DefesaCivilDbContext>();
-    await CobradeSeeder.Seed(dbContext);
 }
 
 app.Run();
