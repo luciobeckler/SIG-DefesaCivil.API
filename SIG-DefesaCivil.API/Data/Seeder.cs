@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
@@ -26,10 +27,11 @@ namespace SIG_DefesaCivil.API.Data
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            var cargos = Enum.GetValues<ECargos>();
-            foreach (var cargo in cargos)
+            var rolesToCreate = RolePermissions.GetAllRoles();
+
+            foreach (var role in rolesToCreate)
             {
-                var roleName = cargo.ToString();
+                var roleName = role.ToString();
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
                     await roleManager.CreateAsync(new IdentityRole(roleName));

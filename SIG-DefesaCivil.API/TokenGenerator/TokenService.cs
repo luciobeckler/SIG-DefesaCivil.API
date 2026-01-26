@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using SIG_DefesaCivil.API.Constants;
 using SIG_DefesaCivil.API.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -20,16 +21,24 @@ namespace SIG_DefesaCivil.API.TokenGenerator
 
         public async Task<string> GenerateJwtTokenAsync(Usuario user)
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            var authClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-            foreach (var role in roles)
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            // Se o usuário não tiver role, defina um padrão ou lance erro
+            var roleName = userRoles.FirstOrDefault() ?? "AgenteDeCampo";
+
+            var claims = new List<Claim>
             {
-                authClaims.Add(new Claim(ClaimTypes.Role, role));
+                new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.Role, roleName), // Usa a role buscada
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
+
+            // Pega as permissões baseadas na Role encontrada
+            var permissoesDoUsuario = RolePermissions.GetByRole(roleName);
+
+            foreach (var perm in permissoesDoUsuario)
+            {
+                claims.Add(new Claim("Permissions", perm));
             }
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
@@ -38,7 +47,7 @@ namespace SIG_DefesaCivil.API.TokenGenerator
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 expires: DateTime.UtcNow.AddHours(Convert.ToDouble(_config["Jwt:ExpireMinutes"])),
-                claims: authClaims,
+                claims: claims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
             );
 

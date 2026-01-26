@@ -133,9 +133,11 @@ namespace SIG_DefesaCivil.API.Services
 
         private void VerificaPermissaoParaMudarParaFase(Usuario usuario, Etapa etapaDestino)
         {
-
-            if (!etapaDestino.PermissoesParaTransicionarParaEstaEtapa
-                    .Contains(Enum.Parse<ECargos>(usuario.Cargo)))
+            var listaDePermissoesVazia = etapaDestino.PermissoesParaTransicionarParaEstaEtapa.Count == 0;
+            var usuarioPossuiPermissao = etapaDestino
+                .PermissoesParaTransicionarParaEstaEtapa
+                .Contains(Enum.Parse<ECargos>(usuario.Cargo));
+            if (!listaDePermissoesVazia && !usuarioPossuiPermissao)
             {
                 throw new UnauthorizedAccessException("Você não tem permissão para transicionar o ocorrencia para a fase desejada.");
             }

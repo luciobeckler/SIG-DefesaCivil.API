@@ -1,5 +1,4 @@
-﻿using SIG_DefesaCivil.API.Data.DTO;
-using SIG_DefesaCivil.API.Enums;
+﻿using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.ValidationAttributes;
 using System.ComponentModel.DataAnnotations;
 
@@ -128,6 +127,7 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
     public class OcorrenciaPreviewDTO
     {
         public string Id { get; set; }
+        public string UsuarioCriadorId { get; set; }
         public int Numero { get; set; }
         public bool isVisible { get; set; } = true;
         public string? EmailResponsavel { get; set; }

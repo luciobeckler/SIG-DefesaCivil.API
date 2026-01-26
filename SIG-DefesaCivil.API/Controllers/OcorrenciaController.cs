@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
-using SIG_DefesaCivil.API.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
@@ -146,27 +145,13 @@ namespace SIG_DefesaCivil.API.Controllers
                     Id = h.Id,
                     OcorrenciaId = h.OcorrenciaId,
                     UsuarioId = h.UsuarioId,
+                    UsuarioNome = h.Usuario.Nome,
                     Acao = h.Acao,
                     UltimaAlteracao = h.UltimaAlteracao
                 });
             return Ok(historicoDTO);
         }
 
-        [HttpGet("status")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
-        public IActionResult GetStatusOptions()
-        {
-            var statusOptions = Enum.GetNames(typeof(EStatusEvento))
-                                    .Select(statusName => new
-                                    {
-                                        value = statusName,
-                                        displayName = statusName
-                                    })
-                                    .ToList();
-
-            return Ok(statusOptions);
-        }
         [HttpPost("alterar-etapa")]
         public async Task<IActionResult> MovimentarOcorrencia([FromBody] MovimentacaoOcorrenciaDTO dto)
         {
