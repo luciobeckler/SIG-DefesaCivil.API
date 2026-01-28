@@ -7,6 +7,6 @@
         public string UsuarioId { get; set; }
         public string UsuarioNome { get; set; }
         public string Acao { get; set; } // "Visualizou detalhes" ou "Editou de ocorrencia"
-        public DateTime UltimaAlteracao { get; set; } = DateTime.UtcNow;
+        public List<DateTime> Horarios { get; set; } = new List<DateTime>();
     }
 }

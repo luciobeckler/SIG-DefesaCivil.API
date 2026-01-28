@@ -147,7 +147,7 @@ namespace SIG_DefesaCivil.API.Controllers
                     UsuarioId = h.UsuarioId,
                     UsuarioNome = h.Usuario.Nome,
                     Acao = h.Acao,
-                    UltimaAlteracao = h.UltimaAlteracao
+                    Horarios = h.Horarios
                 });
             return Ok(historicoDTO);
         }

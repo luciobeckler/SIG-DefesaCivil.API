@@ -160,10 +160,21 @@ namespace SIG_DefesaCivil.API.Services
             if (usuario.Cargo != nameof(ECargos.Administrador) && usuario.Cargo != nameof(ECargos.Diretor))
                 throw new UnauthorizedAccessException("Acesso restrito aos administradores e diretores.");
 
-            return await _context.OcorrenciasHistoricos
+            var historicos = await _context.OcorrenciasHistoricos
+                .Include(h => h.Usuario)
                 .Where(h => h.OcorrenciaId == ocorrenciaId)
-                .OrderByDescending(h => h.UltimaAlteracao)
                 .ToListAsync();
+
+            var historicosOrdenados = historicos
+                .OrderBy(h => h.Usuario.Nome)
+                .Select(h =>
+                {
+                    h.Horarios = h.Horarios.OrderByDescending(data => data).ToList();
+                    return h;
+                })
+                .ToList();
+
+            return historicosOrdenados;
         }
 
         public async Task<List<AnexoDTO>> GetAnexosDTOByOcorrenciaIdAsync(string ocorrenciaId)
@@ -328,12 +339,12 @@ namespace SIG_DefesaCivil.API.Services
                     OcorrenciaId = ocorrenciaId,
                     UsuarioId = usuarioId,
                     Acao = acao,
-                    UltimaAlteracao = DateTime.UtcNow
+                    Horarios = new List<DateTime> { DateTime.Now }
                 });
             }
             else
             {
-                registroUsuarioNoHistoricoOcorrencia.UltimaAlteracao = DateTime.UtcNow;
+                registroUsuarioNoHistoricoOcorrencia.Horarios.Add(DateTime.Now);
             }
         }
         private async Task<Ocorrencia> RecuperaOcorrenciaCompletoPorId(string id)
