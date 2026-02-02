@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 using System.Linq.Expressions;
@@ -26,6 +27,23 @@ namespace SIG_DefesaCivil.API.Data.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            var utcConverter = new ValueConverter<DateTime, DateTime>(
+            v => v, // Ao salvar, mantém como está
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc) // Ao ler, marca como UTC
+        );
+
+            // Aplica automaticamente a todas as propriedades DateTime de todas as entidades
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetValueConverter(utcConverter);
+                    }
+                }
+            }
 
             // === Configuração de Naturezas ===
             modelBuilder.Entity<Natureza>()
