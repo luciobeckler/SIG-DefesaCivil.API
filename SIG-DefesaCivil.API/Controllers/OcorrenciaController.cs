@@ -49,6 +49,10 @@ namespace SIG_DefesaCivil.API.Controllers
             {
                 return StatusCode(403, new { message = ex.Message });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, stack = ex.StackTrace });
+            }
         }
 
         [HttpPost]

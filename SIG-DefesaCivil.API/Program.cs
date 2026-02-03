@@ -194,19 +194,12 @@ builder.Services.AddAutoMapper(cfg =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-app.UseRouting();
 
 if (builder.Environment.IsDevelopment())
 {
     app.UseCors("LocalPolicy");
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 else if (builder.Environment.IsStaging())
 {
@@ -217,6 +210,8 @@ else
     app.UseCors("StaggingPolicy");
 }
 
+app.UseHttpsRedirection();
+app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
