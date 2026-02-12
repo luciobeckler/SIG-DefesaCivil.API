@@ -76,7 +76,7 @@ namespace SIG_DefesaCivil.API.Services
             await ValidarOcorrenciaPaiAsync(dto.OcorrenciaPaiId);
             var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
-            var anoProtocolo = dto.DataEHoraDoOcorrido.Value.Year;
+            var anoProtocolo = DateTime.UtcNow.Year;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
