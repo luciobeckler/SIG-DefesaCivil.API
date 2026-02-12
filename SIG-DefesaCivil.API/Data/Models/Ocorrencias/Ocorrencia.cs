@@ -14,7 +14,7 @@ namespace SIG_DefesaCivil.API.Models.Ocorrencia
         public string EtapaId { get; set; }
         public Etapa Etapa { get; set; }
 
-        public DateTime CreatedAt { get; set; } = new DateTime();
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? DataEHoraDoOcorrido { get; set; }
         public DateTime? DataEHoraInicioAtendimento { get; set; }
         public DateTime? DataEHoraTerminoAtendimento { get; set; }
