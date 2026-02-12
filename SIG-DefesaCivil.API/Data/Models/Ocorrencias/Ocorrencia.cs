@@ -7,13 +7,14 @@ namespace SIG_DefesaCivil.API.Models.Ocorrencia
     public class Ocorrencia
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public int Numero { get; set; }
+        public string Numero { get; set; }
         public bool isVisible { get; set; } = true;
         public string UsuarioCriadorId { get; set; }
         public Usuario UsuarioCriador { get; set; }
         public string EtapaId { get; set; }
         public Etapa Etapa { get; set; }
 
+        public DateTime CreatedAt { get; set; } = new DateTime();
         public DateTime? DataEHoraDoOcorrido { get; set; }
         public DateTime? DataEHoraInicioAtendimento { get; set; }
         public DateTime? DataEHoraTerminoAtendimento { get; set; }

@@ -94,7 +94,7 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
     public class OcorrenciaDetalhesDTO : OcorrenciaDadosBaseDTO
     {
         public string Id { get; set; }
-        public int Numero { get; set; }
+        public string Numero { get; set; }
         public bool isVisible { get; set; } = true;
 
         public DateTime? DataEntradaNaFaseAtual { get; set; }
@@ -128,7 +128,7 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
     {
         public string Id { get; set; }
         public string UsuarioCriadorId { get; set; }
-        public int Numero { get; set; }
+        public string Numero { get; set; }
         public bool isVisible { get; set; } = true;
         public string? EmailResponsavel { get; set; }
 

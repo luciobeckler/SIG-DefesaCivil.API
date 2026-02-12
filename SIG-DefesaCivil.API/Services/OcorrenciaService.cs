@@ -72,31 +72,76 @@ namespace SIG_DefesaCivil.API.Services
 
         public async Task<Ocorrencia> CriarAsync(Usuario usuario, string quadroId, CreateOrEditOcorrenciaDTO dto)
         {
-            var ultimoNumeroDeProtocolo = await _context.Ocorrencia.MaxAsync(e => (int?)e.Numero) ?? 0;
-
+            // --- 1. Validações Prévias ---
             await ValidarOcorrenciaPaiAsync(dto.OcorrenciaPaiId);
             var naturezas = await ValidarEBuscarNaturezasAsync(dto.NaturezasId);
 
-            // --- 2. Mapeamento e Criação ---
-            var ocorrencia = _mapper.Map<Ocorrencia>(dto); // Mapeia campos simples
+            var anoProtocolo = dto.DataEHoraDoOcorrido.Value.Year;
 
-            // Define propriedades gerenciadas manualmente
-            ocorrencia.Id = Guid.NewGuid().ToString();
-            ocorrencia.Numero = ultimoNumeroDeProtocolo + 1;
-            ocorrencia.UsuarioCriadorId = usuario.Id;
-            ocorrencia.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) ? null : dto.OcorrenciaPaiId;
-            ocorrencia.Naturezas = naturezas;
-            ocorrencia.isVisible = true;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                string novoNumeroProtocolo;
 
-            await AssociaSubOcorrenciasNaCriacao(ocorrencia, dto);
+                // Busca a última ocorrência APENAS daquele ano específico
+                // Ordenamos por DataCriacao (ou Id) decrescente para pegar o último inserido
+                var ultimaOcorrenciaDoAno = await _context.Ocorrencia
+                    .Where(x => x.Numero.StartsWith($"{anoProtocolo}-"))
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Select(x => x.Numero)
+                    .FirstOrDefaultAsync();
 
-            // --- 3. Salva o Ocorrencia Principal ---
-            _context.Ocorrencia.Add(ocorrencia);
+                if (ultimaOcorrenciaDoAno == null)
+                {
+                    novoNumeroProtocolo = $"{anoProtocolo}-1";
+                }
+                else
+                {
+                    // Separa "2026-15" em ["2026", "15"]
+                    var partes = ultimaOcorrenciaDoAno.Split('-');
 
-            await _etapaService.AdicionaOcorrenciaNaPrimeiraEtapaAsync(usuario, ocorrencia, quadroId);
-            await _context.SaveChangesAsync();
+                    // Garante que a segunda parte é um número
+                    if (partes.Length > 1 && int.TryParse(partes[1], out int sequencialAtual))
+                    {
+                        novoNumeroProtocolo = $"{anoProtocolo}-{sequencialAtual + 1}";
+                    }
+                    else
+                    {
+                        // Fallback caso o banco tenha algum dado sujo
+                        novoNumeroProtocolo = $"{anoProtocolo}-1";
+                    }
+                }
 
-            return ocorrencia;
+                // --- 3. Mapeamento e Criação ---
+                var ocorrencia = _mapper.Map<Ocorrencia>(dto);
+
+                ocorrencia.Id = Guid.NewGuid().ToString();
+                ocorrencia.Numero = novoNumeroProtocolo; // Atribui o número gerado
+                ocorrencia.UsuarioCriadorId = usuario.Id;
+                ocorrencia.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) ? null : dto.OcorrenciaPaiId;
+                ocorrencia.Naturezas = naturezas;
+                ocorrencia.isVisible = true;
+
+                await AssociaSubOcorrenciasNaCriacao(ocorrencia, dto);
+
+                _context.Ocorrencia.Add(ocorrencia);
+
+                // Adiciona à etapa
+                await _etapaService.AdicionaOcorrenciaNaPrimeiraEtapaAsync(usuario, ocorrencia, quadroId);
+
+                await _context.SaveChangesAsync();
+
+                // Confirma a transação
+                await transaction.CommitAsync();
+
+                return ocorrencia;
+            }
+            catch (Exception)
+            {
+                // Se der erro, desfaz tudo
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task AtualizarAsync(string id, CreateOrEditOcorrenciaDTO dto, Usuario usuario)
