@@ -20,7 +20,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // GET: api/Quadro
         [HttpGet]
-        [ProducesResponseType(typeof(List<QuadroDTO>), 200)]
+        [ProducesResponseType(typeof(List<QuadroDetalhesDTO>), 200)]
         public async Task<IActionResult> ListarTodos()
         {
             var quadros = await _service.ListarTodosAsync();

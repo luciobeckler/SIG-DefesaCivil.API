@@ -9,7 +9,7 @@ namespace SIG_DefesaCivil.API.Data.DTO
         public string Id { get; set; }
 
         // Inclui os ocorrencias (cartões) para renderizar o quadro
-        public List<OcorrenciaPreviewDTO> Ocorrencias { get; set; } = new List<OcorrenciaPreviewDTO>();
+        public List<OcorrenciaDetalhesDTO> Ocorrencias { get; set; } = new List<OcorrenciaDetalhesDTO>();
     }
 
     public class CriaOuAtualizaEtapaDTO : EtapaBaseDTO

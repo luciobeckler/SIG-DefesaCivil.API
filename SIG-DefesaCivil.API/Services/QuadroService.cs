@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
@@ -18,13 +17,30 @@ namespace SIG_DefesaCivil.API.Services
             _mapper = mapper;
         }
 
-        public async Task<List<QuadroDTO>> ListarTodosAsync()
+        public async Task<List<QuadroDetalhesDTO>> ListarTodosAsync()
         {
-            return await _context.Quadros
-                .OrderBy(q => q.Nome)
+            var quadros = await _context.Quadros
                 .AsNoTracking()
-                .ProjectTo<QuadroDTO>(_mapper.ConfigurationProvider)
+                .AsSplitQuery()
+                .Include(q => q.Etapas)
+                    .ThenInclude(e => e.Ocorrencias)
+                        .ThenInclude(ev => ev.UsuarioCriador)
+                .Include(q => q.Etapas)
+                    .ThenInclude(e => e.Ocorrencias)
+                        .ThenInclude(ev => ev.Naturezas)
                 .ToListAsync();
+
+            foreach (var quadro in quadros)
+            {
+                if (quadro.Etapas != null)
+                {
+                    quadro.Etapas = quadro.Etapas
+                        .OrderBy(s => s.Posicao)
+                        .ToList();
+                }
+            }
+
+            return _mapper.Map<List<QuadroDetalhesDTO>>(quadros);
         }
 
         public async Task<QuadroDetalhesDTO> ObterPorIdAsync(string id)
