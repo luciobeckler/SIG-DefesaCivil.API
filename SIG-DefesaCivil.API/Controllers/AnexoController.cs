@@ -15,7 +15,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         [HttpPost("{ocorrenciaId}/anexos")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadArquivos([FromRoute] string ocorrenciaId, [FromForm] UploadAnexoDTO dto)
+        public async Task<IActionResult> UploadArquivos([FromRoute] string ocorrenciaId, [FromForm] UploadAnexosDTO dto)
         {
             // O [FromForm] no DTO popula as propriedades automaticamente
             try
@@ -41,7 +41,7 @@ namespace SIG_DefesaCivil.API.Controllers
         [HttpDelete("{entidadeId}/anexos")]
         public async Task<IActionResult> RemoverAnexosEmLote(
             [FromRoute] string entidadeId,
-            [FromBody] RemocaoAnexoDto dto)
+            [FromBody] RemocaoAnexosDTO dto)
         {
             try
             {

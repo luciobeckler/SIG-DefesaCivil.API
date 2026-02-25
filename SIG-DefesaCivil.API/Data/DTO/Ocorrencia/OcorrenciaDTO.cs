@@ -18,6 +18,8 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
         public string? EnderecoComplemento { get; set; }
         public string? EnderecoBairro { get; set; }
         public string? EnderecoCEP { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
 
         // --- Solicitante (Achatado) ---
         public string? SolicitanteNome { get; set; }

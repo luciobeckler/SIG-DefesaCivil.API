@@ -13,5 +13,9 @@
 
         public string EntidadeId { get; set; }
         public string TipoEntidade { get; set; }
+
+        public string? LatitudeCaptura { get; set; }
+        public string? LongitudeCaptura { get; set; }
+        public DateTime? DataHoraCaptura { get; set; }
     }
 }
