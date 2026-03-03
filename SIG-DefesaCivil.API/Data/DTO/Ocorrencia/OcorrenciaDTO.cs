@@ -1,4 +1,5 @@
-﻿using SIG_DefesaCivil.API.Enums;
+﻿using SIG_DefesaCivil.API.Data.Enums;
+using SIG_DefesaCivil.API.Data.Models.Shared;
 using SIG_DefesaCivil.API.ValidationAttributes;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,15 +12,7 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
         public DateTime? DataEHoraDoOcorrido { get; set; }
         public DateTime? DataEHoraInicioAtendimento { get; set; }
         public DateTime? DataEHoraTerminoAtendimento { get; set; }
-
-        // --- Endereço (Achatado) ---
-        public string? EnderecoRua { get; set; }
-        public string? EnderecoNumero { get; set; }
-        public string? EnderecoComplemento { get; set; }
-        public string? EnderecoBairro { get; set; }
-        public string? EnderecoCEP { get; set; }
-        public double? Latitude { get; set; }
-        public double? Longitude { get; set; }
+        public Endereco? Localizacao { get; set; }
 
         // --- Solicitante (Achatado) ---
         public string? SolicitanteNome { get; set; }

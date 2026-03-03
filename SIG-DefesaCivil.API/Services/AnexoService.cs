@@ -18,7 +18,7 @@ public class AnexoService
         _context = context;
     }
 
-    public async Task<List<Anexo>> SalvarAnexosEmLoteAsync(List<ArquivoUploadDTO> fileData, string entidadeId, string tipoEntidade)
+    public async Task<List<Anexo>> SalvarAnexosEmLoteAsync(List<ArquivoUploadDTO> fileData, string entidadeId, ETiposEntidades tipoEntidade)
     {
         var anexosParaSalvar = new List<Anexo>();
 
@@ -50,12 +50,13 @@ public class AnexoService
                 IdArquivoExterno = result.FileId,
                 TipoConteudo = item.Arquivo.ContentType,
                 TamanhoBytes = item.Arquivo.Length,
-                EntidadeId = entidadeId,
                 TipoEntidade = tipoEntidade,
                 DataUpload = DateTime.UtcNow,
-
-                LatitudeCaptura = item.Latitude,
-                LongitudeCaptura = item.Longitude,
+                Localizacao =
+                {
+                    Longitude = item.Localizacao.Longitude,
+                    Latitude = item.Localizacao.Latitude
+                },
                 DataHoraCaptura = item.DataHoraCaptura
             };
         });
@@ -82,7 +83,7 @@ public class AnexoService
         }
     }
 
-    public async Task RemoverAnexosAsync(string entidadeTipo, string entidadeId, List<string> idsAnexosParaRemover)
+    public async Task RemoverAnexosAsync(ETiposEntidades entidadeTipo, string entidadeId, List<string> idsAnexosParaRemover)
     {
         // ... (Mantido exatamente igual ao seu código, a lógica de remoção está correta)
         if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any()) return;

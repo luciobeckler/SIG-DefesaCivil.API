@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using SIG_DefesaCivil.API.Constants;
+using SIG_DefesaCivil.API.Data.Constantes;
 using SIG_DefesaCivil.API.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace SIG_DefesaCivil.API.TokenGenerator
+namespace SIG_DefesaCivil.API.Services.TokenGenerator
 {
     public class TokenService
     {

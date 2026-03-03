@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SIG_DefesaCivil.API.Constants;
-using SIG_DefesaCivil.API.Data.Context;
-using SIG_DefesaCivil.API.Enums;
+using SIG_DefesaCivil.API.Data.Constantes;
+using SIG_DefesaCivil.API.Data.Enums;
 using SIG_DefesaCivil.API.Models;
 
-namespace SIG_DefesaCivil.API.Data
+namespace SIG_DefesaCivil.API.Data.Context
 {
     public class Seeder
     {

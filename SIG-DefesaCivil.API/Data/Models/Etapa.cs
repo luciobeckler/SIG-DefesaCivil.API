@@ -1,4 +1,4 @@
-﻿using SIG_DefesaCivil.API.Enums;
+﻿using SIG_DefesaCivil.API.Data.Enums;
 
 namespace SIG_DefesaCivil.API.Models
 {

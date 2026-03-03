@@ -24,7 +24,7 @@ namespace SIG_DefesaCivil.API.Controllers
                 if (dto.Arquivos == null || !dto.Arquivos.Any())
                     return BadRequest("Nenhum arquivo enviado.");
 
-                var anexos = await _anexoService.SalvarAnexosEmLoteAsync(dto.Arquivos, ocorrenciaId, dto.Entidade);
+                var anexos = await _anexoService.SalvarAnexosEmLoteAsync(dto.Arquivos, ocorrenciaId, dto.TipoEntidade);
                 return Ok(anexos);
             }
             catch (ArgumentException ex) // Erros de validação (tamanho, tipo)
@@ -45,7 +45,7 @@ namespace SIG_DefesaCivil.API.Controllers
         {
             try
             {
-                await _anexoService.RemoverAnexosAsync(dto.EntidadeTipo, entidadeId, dto.IdsAnexos);
+                await _anexoService.RemoverAnexosAsync(dto.TipoEntidade, entidadeId, dto.IdsAnexos);
                 return NoContent();
             }
             catch (Exception ex)

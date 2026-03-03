@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
-using SIG_DefesaCivil.API.Enums;
+using SIG_DefesaCivil.API.Data.Enums;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 
@@ -56,7 +56,7 @@ namespace SIG_DefesaCivil.API.Services
 
             // Busca os anexos genéricos associados a este ocorrencia
             var anexos = await _context.Anexos
-                .Where(a => a.EntidadeId == ocorrencia.Id && a.TipoEntidade == "Ocorrencia")
+                .Where(a => a.EntidadeId == ocorrencia.Id && a.TipoEntidade == ETiposEntidades.Ocorrencia)
                 .AsNoTracking()
                 .ToListAsync();
 
@@ -225,7 +225,7 @@ namespace SIG_DefesaCivil.API.Services
         public async Task<List<AnexoDTO>> GetAnexosDTOByOcorrenciaIdAsync(string ocorrenciaId)
         {
             var anexos = await _context.Anexos
-                .Where(a => a.EntidadeId == ocorrenciaId && a.TipoEntidade == "Ocorrencia")
+                .Where(a => a.EntidadeId == ocorrenciaId && a.TipoEntidade == ETiposEntidades.Ocorrencia)
                 .AsNoTracking()
                 .ToListAsync();
 

@@ -1,10 +1,12 @@
-﻿namespace SIG_DefesaCivil.API.Constants
+﻿using SIG_DefesaCivil.API.Data.Enums;
+
+namespace SIG_DefesaCivil.API.Data.Constantes
 {
     public static class Permissoes
     {
-        private const string RoleAdministrador = nameof(Enums.ECargos.Administrador);
-        private const string RoleDiretor = nameof(Enums.ECargos.Diretor);
-        private const string RoleAgente = nameof(Enums.ECargos.AgenteDeCampo);
+        private const string RoleAdministrador = nameof(ECargos.Administrador);
+        private const string RoleDiretor = nameof(ECargos.Diretor);
+        private const string RoleAgente = nameof(ECargos.AgenteDeCampo);
 
         public const string ApenasAdmin = RoleAdministrador;
         public const string DiretorOuSuperior = RoleDiretor + "," + RoleAdministrador;

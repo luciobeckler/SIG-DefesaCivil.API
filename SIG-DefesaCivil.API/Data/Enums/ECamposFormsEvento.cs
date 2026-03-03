@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace SIG_DefesaCivil.API.Enums
+namespace SIG_DefesaCivil.API.Data.Enums
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum EAnalisePreliminar { Sim, Nao, Vistoria, Orientacao, Arquivamento, Outros }
