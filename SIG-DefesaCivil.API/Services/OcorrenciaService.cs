@@ -5,6 +5,7 @@ using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Data.Enums;
+using SIG_DefesaCivil.API.Data.Models.Ocorrencias;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 
@@ -33,20 +34,9 @@ namespace SIG_DefesaCivil.API.Services
             _userManager = userManager;
         }
 
-        public async Task<Ocorrencia> GetOcorrenciaPreviewById(string id)
-        {
-            var ocorrencia = await _context.Ocorrencia
-                .FirstOrDefaultAsync(e => e.Id.Equals(id));
 
-            if (ocorrencia == null)
-            {
-                throw new KeyNotFoundException("Ocorrencia não encontrado");
-            }
 
-            return ocorrencia;
-        }
-
-        public async Task<OcorrenciaDetalhesDTO> OcorrenciaDetalheById(string id, Usuario usuario)
+        public async Task<OcorrenciaOffilineDTO> OcorrenciaDetalheById(string id, Usuario usuario)
         {
             var ocorrencia = await RecuperaOcorrenciaCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(ocorrencia.UsuarioCriadorId, usuario);
@@ -61,7 +51,7 @@ namespace SIG_DefesaCivil.API.Services
                 .ToListAsync();
 
             // Mapeia o ocorrencia principal
-            var ocorrenciaDto = _mapper.Map<OcorrenciaDetalhesDTO>(ocorrencia);
+            var ocorrenciaDto = _mapper.Map<OcorrenciaOffilineDTO>(ocorrencia);
 
             // Mapeia e atribui os anexos
             ocorrenciaDto.Anexos = _mapper.Map<List<AnexoDTO>>(anexos);
@@ -86,9 +76,9 @@ namespace SIG_DefesaCivil.API.Services
                 // Busca a última ocorrência APENAS daquele ano específico
                 // Ordenamos por DataCriacao (ou Id) decrescente para pegar o último inserido
                 var ultimaOcorrenciaDoAno = await _context.Ocorrencia
-                    .Where(x => x.Numero.StartsWith($"{anoProtocolo}-"))
+                    .Where(x => x.Protocolo.StartsWith($"{anoProtocolo}-"))
                     .OrderByDescending(x => x.CreatedAt)
-                    .Select(x => x.Numero)
+                    .Select(x => x.Protocolo)
                     .FirstOrDefaultAsync();
 
                 if (ultimaOcorrenciaDoAno == null)
@@ -116,11 +106,11 @@ namespace SIG_DefesaCivil.API.Services
                 var ocorrencia = _mapper.Map<Ocorrencia>(dto);
 
                 ocorrencia.Id = Guid.NewGuid().ToString();
-                ocorrencia.Numero = novoNumeroProtocolo; // Atribui o número gerado
+                ocorrencia.Protocolo = novoNumeroProtocolo; // Atribui o número gerado
                 ocorrencia.UsuarioCriadorId = usuario.Id;
                 ocorrencia.OcorrenciaPaiId = string.IsNullOrWhiteSpace(dto.OcorrenciaPaiId) ? null : dto.OcorrenciaPaiId;
                 ocorrencia.Naturezas = naturezas;
-                ocorrencia.isVisible = true;
+                ocorrencia.isVisivel = true;
 
                 await AssociaSubOcorrenciasNaCriacao(ocorrencia, dto);
 
@@ -187,13 +177,13 @@ namespace SIG_DefesaCivil.API.Services
             if (!podeDeletar)
                 throw new UnauthorizedAccessException("Você não tem permissão para excluir ocorrencias.");
 
-            if (ocorrencia.SubOcorrencias != null && ocorrencia.SubOcorrencias.Any(se => se.isVisible))
+            if (ocorrencia.SubOcorrencias != null && ocorrencia.SubOcorrencias.Any(se => se.isVisivel))
             {
                 throw new InvalidOperationException("Não é possível excluir este ocorrencia pois ele possui sub-ocorrencias visíveis associados. Remova ou reatribua os sub-ocorrencias primeiro.");
             }
 
             // Soft Delete
-            ocorrencia.isVisible = false;
+            ocorrencia.isVisivel = false;
             var acao = "Deletou ocorrencia";
             AdicionaOuAtualizaHistorico(ocorrencia.Id, usuario.Id, acao);
 
@@ -236,14 +226,24 @@ namespace SIG_DefesaCivil.API.Services
         {
             var ocorrencia = await _context.Ocorrencia
                 .FirstOrDefaultAsync(o => o.Id == ocorrenciaId);
-            if (ocorrencia == null)
-                throw new KeyNotFoundException("Ocorrencia não encontrada");
+
+            ArgumentNullException.ThrowIfNull(ocorrencia, "Ocorrencia não encontrada");
 
             var etapaAtual = await _etapaService.GetEtapaById(etapaAtualId);
             var etapaDestino = await _etapaService.GetEtapaById(etapaDestinoId);
 
             _etapaService.VerificaRegrasDeTransicao(usuario, ocorrencia, etapaAtual, etapaDestino);
 
+            var transicao = new Transicao
+            {
+                DataEHorario = DateTime.Now,
+                Ocorrencia = ocorrencia,
+                Responsavel = usuario,
+                EtapaAtual = etapaDestino,
+                EtapaAnterior = etapaAtual,
+            };
+
+            ocorrencia.Transicoes.Add(transicao);
             etapaAtual.Ocorrencias.Remove(ocorrencia);
             etapaDestino.Ocorrencias.Add(ocorrencia);
             ocorrencia.DataEntradaNaFaseAtual = DateTime.Now;
@@ -286,15 +286,24 @@ namespace SIG_DefesaCivil.API.Services
                     try
                     {
                         await TransicionaOcorrencia(usuarioSistema, ocorrencia.Id, etapa.Id, idEtapaDestino);
-                        Console.WriteLine($"   -> Ocorrência {ocorrencia.Numero} movida para próxima etapa.");
+                        Console.WriteLine($"   -> Ocorrência {ocorrencia.Protocolo} movida para próxima etapa.");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"   -> [ERRO] Falha ao mover {ocorrencia.Numero}: {ex.Message}");
+                        Console.WriteLine($"   -> [ERRO] Falha ao mover {ocorrencia.Protocolo}: {ex.Message}");
                     }
                 }
             }
         }
+        public async Task<List<Transicao>> GetTransicoesByOcorrenciaId(string ocorrenciaId)
+        {
+            var transicoes = await _context.Set<Transicao>()
+                .Where(t => t.OcorrenciaId == ocorrenciaId)
+                .ToListAsync();
+
+            return transicoes;
+        }
+
         private async Task AtualizaOcorrenciaPaiAsync(Ocorrencia ocorrenciaParaAtualizar, CreateOrEditOcorrenciaDTO dto)
         {
             await ValidarOcorrenciaPaiAsync(dto.OcorrenciaPaiId);
@@ -349,7 +358,7 @@ namespace SIG_DefesaCivil.API.Services
                 {
                     if (!string.IsNullOrWhiteSpace(subOcorrencia.OcorrenciaPaiId) && subOcorrencia.OcorrenciaPaiId != ocorrenciaParaAtualizar.Id)
                     {
-                        throw new InvalidOperationException($"A sub-ocorrencia {subOcorrencia.Numero} (ID: {subOcorrencia.Id}) já está associado a outra ocorrência pai. Remova a associação anterior primeiro.");
+                        throw new InvalidOperationException($"A sub-ocorrencia {subOcorrencia.Protocolo} (ID: {subOcorrencia.Id}) já está associado a outra ocorrência pai. Remova a associação anterior primeiro.");
                     }
 
                     ocorrenciaParaAtualizar.SubOcorrencias.Add(subOcorrencia);
@@ -395,16 +404,17 @@ namespace SIG_DefesaCivil.API.Services
         private async Task<Ocorrencia> RecuperaOcorrenciaCompletoPorId(string id)
         {
             var ocorrencia = await _context.Ocorrencia
-                .Include(e => e.UsuarioCriador)
-                .Include(e => e.OcorrenciaPai).ThenInclude(p => p.UsuarioCriador)
-                .Include(e => e.SubOcorrencias).ThenInclude(s => s.UsuarioCriador)
-                .Include(e => e.Naturezas)
+                .Include(o => o.UsuarioCriador)
+                .Include(o => o.OcorrenciaPai).ThenInclude(p => p.UsuarioCriador)
+                .Include(o => o.SubOcorrencias).ThenInclude(s => s.UsuarioCriador)
+                .Include(o => o.Naturezas)
+                .Include(o => o.Transicoes.OrderBy(t => t.DataEHorario))
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (ocorrencia == null)
                 throw new InvalidOperationException($"O ocorrencia com o ID '{id}' não foi encontrado.");
 
-            if (!ocorrencia.isVisible)
+            if (!ocorrencia.isVisivel)
                 throw new InvalidOperationException($"O ocorrencia com o ID '{id}' foi deletado, entre em contato com o administrador para mais informações.");
 
             return ocorrencia;

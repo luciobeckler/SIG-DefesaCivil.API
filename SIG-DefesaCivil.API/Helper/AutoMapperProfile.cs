@@ -3,7 +3,7 @@ using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Data.Enums;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Models.Ocorrencia; // Namespace da entidade Ocorrencia
+using SIG_DefesaCivil.API.Models.Ocorrencia;
 
 namespace SIG_DefesaCivil.API.Helper
 {
@@ -11,29 +11,19 @@ namespace SIG_DefesaCivil.API.Helper
     {
         public AutoMapperProfile()
         {
-            // ==========================================================
-            // 1. AUXILIARES
-            // ==========================================================
+            AllowNullCollections = false;
 
             CreateMap<Usuario, DetalhesUsuarioDTO>()
-                 .ForMember(dest => dest.Nome, opt => opt.MapFrom(src => src.UserName)); // Ajuste se tiver campo 'Nome' real
+                 .ForMember(dest => dest.Nome, opt => opt.MapFrom(src => src.UserName));
 
-            // ==========================================================
-            // 2. OCORRÊNCIAS
-            // ==========================================================
-
-            // --- Ocorrencia -> OcorrenciaPreviewDTO (Listagem/Kanban) ---
             CreateMap<Ocorrencia, OcorrenciaPreviewDTO>()
                 .ForMember(dest => dest.EmailResponsavel, opt => opt.MapFrom(src => src.UsuarioCriador.NormalizedEmail))
-                // Montagem do Endereço Resumido
                 .ForMember(dest => dest.EnderecoResumido, opt => opt.MapFrom(src =>
-                    string.IsNullOrEmpty(src.Campos.Localizacao.Rua) ? "Endereço não informado" : $"{src.Campos.Localizacao.Rua}, {src.Campos.Localizacao.Rua}"))
-                // Conversão Segura de Lista de Enums -> String (com verificação de nulo)
-                .ForMember(dest => dest.TipoDeRisco, opt => opt.MapFrom(src =>
-                    src.Campos.TipoDeRisco != null ? src.Campos.TipoDeRisco.Select(e => e.ToString()).ToList() : new List<string>()));
+                    string.IsNullOrEmpty(src.Campos.Localizacao.Rua)
+                    ? "Endereço não informado"
+                    : $"{src.Campos.Localizacao.Rua}, {src.Campos.Localizacao.Numero}"))
+                .ForMember(dest => dest.TipoDeRisco, opt => opt.MapFrom(src => ToStringList(src.Campos.TipoDeRisco)));
 
-
-            // --- CreateOrEditOcorrenciaDTO -> Ocorrencia (Entrada) ---
             CreateMap<CreateOrEditOcorrenciaDTO, Ocorrencia>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.UsuarioCriadorId, opt => opt.Ignore())
@@ -44,44 +34,37 @@ namespace SIG_DefesaCivil.API.Helper
                 .ForMember(dest => dest.Naturezas, opt => opt.Ignore())
                 .ForMember(dest => dest.Anexos, opt => opt.Ignore())
                 .ForMember(dest => dest.DataEntradaNaFaseAtual, opt => opt.Ignore())
-                .ForMember(dest => dest.isVisible, opt => opt.Ignore())
+                .ForMember(dest => dest.isVisivel, opt => opt.Ignore())
 
-                // --- Conversão Explícita de List<String> para List<Enum> ---
-                .ForMember(dest => dest.Campos.AnalisePreliminar, opt => opt.MapFrom(src => src.AnalisePreliminar.Select(s => Enum.Parse<EAnalisePreliminar>(s)).ToList()))
-                .ForMember(dest => dest.Campos.CaracterizacaoDoLocal, opt => opt.MapFrom(src => src.CaracterizacaoDoLocal.Select(s => Enum.Parse<ECaracterizacaoLocal>(s)).ToList()))
-                .ForMember(dest => dest.Campos.Edificacao, opt => opt.MapFrom(src => src.Edificacao.Select(s => Enum.Parse<ETipoEdificacao>(s)).ToList()))
-                .ForMember(dest => dest.Campos.Estrutura, opt => opt.MapFrom(src => src.Estrutura.Select(s => Enum.Parse<ETipoEstrutura>(s)).ToList()))
-                .ForMember(dest => dest.Campos.TipoDeRisco, opt => opt.MapFrom(src => src.TipoDeRisco.Select(s => Enum.Parse<ETipoRisco>(s)).ToList()))
-                .ForMember(dest => dest.Campos.TipificacaoDaOcorrencia, opt => opt.MapFrom(src => src.TipificacaoDaOcorrencia.Select(s => Enum.Parse<ETipificacaoOcorrencia>(s)).ToList()))
-                .ForMember(dest => dest.Campos.Motivacao, opt => opt.MapFrom(src => src.Motivacao.Select(s => Enum.Parse<EMotivacao>(s)).ToList()))
-                .ForMember(dest => dest.Campos.AreasAfetadas, opt => opt.MapFrom(src => src.AreasAfetadas.Select(s => Enum.Parse<EAreaAfetada>(s)).ToList()));
+                // Usando ForPath para propriedades aninhadas
+                .ForPath(dest => dest.Campos.AnalisePreliminar, opt => opt.MapFrom(src => ToEnumList<EAnalisePreliminar>(src.Campos.AnalisePreliminar)))
+                .ForPath(dest => dest.Campos.CaracterizacaoDoLocal, opt => opt.MapFrom(src => ToEnumList<ECaracterizacaoLocal>(src.Campos.CaracterizacaoDoLocal)))
+                .ForPath(dest => dest.Campos.Edificacao, opt => opt.MapFrom(src => ToEnumList<ETipoEdificacao>(src.Campos.Edificacao)))
+                .ForPath(dest => dest.Campos.Estrutura, opt => opt.MapFrom(src => ToEnumList<ETipoEstrutura>(src.Campos.Estrutura)))
+                .ForPath(dest => dest.Campos.TipoDeRisco, opt => opt.MapFrom(src => ToEnumList<ETipoRisco>(src.Campos.TipoDeRisco)))
+                .ForPath(dest => dest.Campos.TipificacaoDaOcorrencia, opt => opt.MapFrom(src => ToEnumList<ETipificacaoOcorrencia>(src.Campos.TipificacaoDaOcorrencia)))
+                .ForPath(dest => dest.Campos.Motivacao, opt => opt.MapFrom(src => ToEnumList<EMotivacao>(src.Campos.Motivacao)))
+                .ForPath(dest => dest.Campos.AreasAfetadas, opt => opt.MapFrom(src => ToEnumList<EAreaAfetada>(src.Campos.AreasAfetadas)));
 
 
             // --- Ocorrencia -> OcorrenciaDetalhesDTO (Saída Completa) ---
-            CreateMap<Ocorrencia, OcorrenciaDetalhesDTO>()
-                .ForMember(dest => dest.UsuarioCriador, opt => opt.MapFrom(src => src.UsuarioCriador))
-                .ForMember(dest => dest.SubOcorrencias, opt => opt.MapFrom(src => src.SubOcorrencias))
-                .ForMember(dest => dest.OcorrenciaPai, opt => opt.MapFrom(src => src.OcorrenciaPai))
-                .ForMember(dest => dest.Naturezas, opt => opt.MapFrom(src => src.Naturezas))
+            CreateMap<Ocorrencia, OcorrenciaOffilineDTO>()
                 .ForMember(dest => dest.Anexos, opt => opt.Ignore())
 
-                // Conversão de List<Enum> para List<String> (Com Null Check)
-                .ForMember(dest => dest.AnalisePreliminar, opt => opt.MapFrom(src => src.Campos.AnalisePreliminar != null ? src.Campos.AnalisePreliminar.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.CaracterizacaoDoLocal, opt => opt.MapFrom(src => src.Campos.CaracterizacaoDoLocal != null ? src.Campos.CaracterizacaoDoLocal.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.Edificacao, opt => opt.MapFrom(src => src.Campos.Edificacao != null ? src.Campos.Edificacao.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.Estrutura, opt => opt.MapFrom(src => src.Campos.Estrutura != null ? src.Campos.Estrutura.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.TipoDeRisco, opt => opt.MapFrom(src => src.Campos.TipoDeRisco != null ? src.Campos.TipoDeRisco.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.TipificacaoDaOcorrencia, opt => opt.MapFrom(src => src.Campos.TipificacaoDaOcorrencia != null ? src.Campos.TipificacaoDaOcorrencia.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.Motivacao, opt => opt.MapFrom(src => src.Campos.Motivacao != null ? src.Campos.Motivacao.Select(e => e.ToString()).ToList() : new List<string>()))
-                .ForMember(dest => dest.AreasAfetadas, opt => opt.MapFrom(src => src.Campos.AreasAfetadas != null ? src.Campos.AreasAfetadas.Select(e => e.ToString()).ToList() : new List<string>()))
+                // Usando ForPath para propriedades aninhadas
+                .ForPath(dest => dest.Campos.AnalisePreliminar, opt => opt.MapFrom(src => ToStringList(src.Campos.AnalisePreliminar)))
+                .ForPath(dest => dest.Campos.CaracterizacaoDoLocal, opt => opt.MapFrom(src => ToStringList(src.Campos.CaracterizacaoDoLocal)))
+                .ForPath(dest => dest.Campos.Edificacao, opt => opt.MapFrom(src => ToStringList(src.Campos.Edificacao)))
+                .ForPath(dest => dest.Campos.Estrutura, opt => opt.MapFrom(src => ToStringList(src.Campos.Estrutura)))
+                .ForPath(dest => dest.Campos.TipoDeRisco, opt => opt.MapFrom(src => ToStringList(src.Campos.TipoDeRisco)))
+                .ForPath(dest => dest.Campos.TipificacaoDaOcorrencia, opt => opt.MapFrom(src => ToStringList(src.Campos.TipificacaoDaOcorrencia)))
+                .ForPath(dest => dest.Campos.Motivacao, opt => opt.MapFrom(src => ToStringList(src.Campos.Motivacao)))
+                .ForPath(dest => dest.Campos.AreasAfetadas, opt => opt.MapFrom(src => ToStringList(src.Campos.AreasAfetadas)))
 
-                // Single Selects (Enum -> String)
-                .ForMember(dest => dest.GrauDeRisco, opt => opt.MapFrom(src => src.Campos.GrauDeRisco.HasValue ? src.Campos.GrauDeRisco.ToString() : null))
-                .ForMember(dest => dest.RegimeDeOcupacaoDoImovel, opt => opt.MapFrom(src => src.Campos.RegimeDeOcupacaoDoImovel.HasValue ? src.Campos.RegimeDeOcupacaoDoImovel.ToString() : null));
+                // Single Selects com ForPath
+                .ForPath(dest => dest.Campos.GrauDeRisco, opt => opt.MapFrom(src => src.Campos.GrauDeRisco.ToString()))
+                .ForPath(dest => dest.Campos.RegimeDeOcupacaoDoImovel, opt => opt.MapFrom(src => src.Campos.RegimeDeOcupacaoDoImovel.ToString()));
 
-            // ==========================================================
-            // 3. OUTROS
-            // ==========================================================
             CreateMap<Natureza, NaturezaResumoDTO>();
             CreateMap<Natureza, NaturezaDTO>();
             CreateMap<CreateNaturezaDTO, Natureza>();
@@ -92,9 +75,20 @@ namespace SIG_DefesaCivil.API.Helper
             CreateMap<Quadro, QuadroDetalhesDTO>();
             CreateMap<CriarOuEditarQuadroDTO, Quadro>();
 
-            CreateMap<Etapa, EtapaDTO>()
-                .ForMember(dest => dest.Ocorrencias, opt => opt.MapFrom(src => src.Ocorrencias)); // Ocorrencia -> Preview
+            CreateMap<Etapa, EtapaDTO>();
             CreateMap<CriaOuAtualizaEtapaDTO, Etapa>();
+        }
+
+        private static List<TEnum> ToEnumList<TEnum>(IEnumerable<string>? source) where TEnum : struct, Enum
+        {
+            if (source == null || !source.Any()) return new List<TEnum>();
+            return source.Select(s => Enum.Parse<TEnum>(s)).ToList();
+        }
+
+        private static List<string> ToStringList<TEnum>(IEnumerable<TEnum>? source) where TEnum : struct, Enum
+        {
+            if (source == null || !source.Any()) return new List<string>();
+            return source.Select(e => e.ToString()).ToList();
         }
     }
 }

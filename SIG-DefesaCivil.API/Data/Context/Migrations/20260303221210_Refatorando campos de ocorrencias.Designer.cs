@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SIG_DefesaCivil.API.Data.Context;
@@ -12,9 +13,11 @@ using SIG_DefesaCivil.API.Data.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260303221210_Refatorando campos de ocorrencias")]
+    partial class Refatorandocamposdeocorrencias
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,7 +181,7 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<DateTime>("DataEHorario")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("EtapaAnteriorId")
+                    b.Property<string>("EtapaAnteriorlId")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -196,7 +199,7 @@ namespace SIG_DefesaCivil.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EtapaAnteriorId");
+                    b.HasIndex("EtapaAnteriorlId");
 
                     b.HasIndex("EtapaAtualId");
 
@@ -607,9 +610,9 @@ namespace SIG_DefesaCivil.API.Migrations
 
             modelBuilder.Entity("SIG_DefesaCivil.API.Data.Models.Ocorrencias.Transicao", b =>
                 {
-                    b.HasOne("SIG_DefesaCivil.API.Models.Etapa", "EtapaAnterior")
+                    b.HasOne("SIG_DefesaCivil.API.Models.Etapa", "EtapaAnteriorl")
                         .WithMany()
-                        .HasForeignKey("EtapaAnteriorId")
+                        .HasForeignKey("EtapaAnteriorlId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -631,7 +634,7 @@ namespace SIG_DefesaCivil.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("EtapaAnterior");
+                    b.Navigation("EtapaAnteriorl");
 
                     b.Navigation("EtapaAtual");
 

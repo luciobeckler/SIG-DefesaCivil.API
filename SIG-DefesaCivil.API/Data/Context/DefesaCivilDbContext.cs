@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SIG_DefesaCivil.API.Data.Models.Ocorrencias;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 using System.Reflection;
@@ -21,6 +22,7 @@ namespace SIG_DefesaCivil.API.Data.Context
         public DbSet<Quadro> Quadros { get; set; }
         public DbSet<Etapa> Etapas { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Transicao> Trasicoes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Enums;
-using SIG_DefesaCivil.API.Data.Models.Shared;
 
-namespace SIG_DefesaCivil.API.Data.Models.Ocorrencias
+namespace SIG_DefesaCivil.API.Data.Models.Shared
 {
     [Owned]
     public class OcorrenciaCampos

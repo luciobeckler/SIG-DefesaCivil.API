@@ -1,4 +1,5 @@
 ﻿using SIG_DefesaCivil.API.Data.Models.Shared;
+using System.Text.Json.Serialization;
 
 namespace SIG_DefesaCivil.API.Models
 {
@@ -19,6 +20,7 @@ namespace SIG_DefesaCivil.API.Models
         public DateTime? DataHoraCaptura { get; set; }
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ETiposEntidades
     {
         Ocorrencia
