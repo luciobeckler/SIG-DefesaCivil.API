@@ -20,5 +20,15 @@ namespace SIG_DefesaCivil.API.Mappers
                 DataHoraCaptura = entity.DataHoraCaptura,
             };
         }
+
+        public static AnexoUploadDTO ToDto(this IFormFile entity)
+        {
+            if (entity == null) return null!;
+
+            return new AnexoUploadDTO
+            {
+                Anexo = entity
+            };
+        }
     }
 }

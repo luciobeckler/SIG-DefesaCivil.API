@@ -2,13 +2,11 @@
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Data.Enums;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
-using System.Text.Json;
 
 namespace SIG_DefesaCivil.API.Mappers
 {
     public static class OcorrenciaMapper
     {
-        // --- Entrada de Dados (Create/Update) ---
         public static Ocorrencia ToEntity(this CreateOrEditOcorrenciaDTO dto)
         {
             if (dto == null) return null!;
@@ -35,13 +33,24 @@ namespace SIG_DefesaCivil.API.Mappers
             };
         }
 
-        public static CreateOrEditOcorrenciaDTO ToCreateOcorrenciaDTO(this SolicitacaoVistoriaDTO dto, ETipoCadastroOcorrencia tipoCadastro)
+        public static CreateOrEditOcorrenciaDTO ToCreateOcorrenciaDTO(
+            this SolicitacaoVistoriaDTO vistoriaDto,
+            ETipoCadastroOcorrencia tipoCadastro)
         {
-            if (dto == null) return null!;
-            var ocorrenciaDto = JsonSerializer.Deserialize<CreateOrEditOcorrenciaDTO>(dto.DadosJson);
-            ocorrenciaDto.TipoCadastro = tipoCadastro;
+            if (vistoriaDto == null)
+                throw new ArgumentNullException(nameof(vistoriaDto));
 
-            return ocorrenciaDto;
+            return new CreateOrEditOcorrenciaDTO
+            {
+                TipoCadastro = tipoCadastro,
+
+                Campos = new OcorrenciaCamposDTO
+                {
+                    DataEHoraDoOcorrido = DateTime.Now,
+                    Solicitante = vistoriaDto.Solicitante,
+                    Localizacao = vistoriaDto.Localizacao
+                }
+            };
         }
     }
 }
