@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.TokenGenerator;
+using SIG_DefesaCivil.API.Services.TokenGenerator;
 
 namespace SIG_DefesaCivil.API.Services
 {

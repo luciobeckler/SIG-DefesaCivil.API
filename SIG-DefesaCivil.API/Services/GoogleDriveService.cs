@@ -72,12 +72,12 @@ namespace SIG_DefesaCivil.API.Services
             try
             {
                 await _driveService.Files.Delete(fileId).ExecuteAsync();
-                _logger.LogInformation("Arquivo removido do Google Drive: {FileId}", fileId);
+                _logger.LogInformation("Anexo removido do Google Drive: {FileId}", fileId);
             }
             catch (Exception ex)
             {
-                // Loga como Warning para não poluir o log de erros graves, já que o arquivo pode já não existir
-                _logger.LogWarning(ex, "Erro não bloqueante ao excluir arquivo do Google Drive: {FileId}", fileId);
+                // Loga como Warning para não poluir o log de erros graves, já que o anexo pode já não existir
+                _logger.LogWarning(ex, "Erro não bloqueante ao excluir anexo do Google Drive: {FileId}", fileId);
             }
         }
 
@@ -94,7 +94,7 @@ namespace SIG_DefesaCivil.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Não foi possível tornar o arquivo {FileId} público.", fileId);
+                _logger.LogWarning(ex, "Não foi possível tornar o anexo {FileId} público.", fileId);
                 // Não lançamos throw aqui para não cancelar o processo todo só por causa da permissão
             }
         }

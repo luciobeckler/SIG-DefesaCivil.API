@@ -3,13 +3,12 @@
     public class OcorrenciaHistorico
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string OcorrenciaId { get; set; }
-        public Ocorrencia.Ocorrencia Ocorrencia { get; set; }
-
-        public string UsuarioId { get; set; }
-        public Usuario Usuario { get; set; }
-
         public string Acao { get; set; } // "Visualizou detalhes" ou "Editou de ocorrencia"
         public List<DateTime> Horarios { get; set; } = new List<DateTime>();
+
+        public string OcorrenciaId { get; set; }
+        public Ocorrencia.Ocorrencia Ocorrencia { get; set; }
+        public string UsuarioId { get; set; }
+        public Usuario Usuario { get; set; }
     }
 }

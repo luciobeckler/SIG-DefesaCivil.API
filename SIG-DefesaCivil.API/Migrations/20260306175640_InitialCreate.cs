@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -207,9 +209,9 @@ namespace SIG_DefesaCivil.API.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Token = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false),
-                    Expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Revoked = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    Expires = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Created = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Revoked = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -252,49 +254,52 @@ namespace SIG_DefesaCivil.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    Numero = table.Column<int>(type: "integer", nullable: false),
-                    isVisible = table.Column<bool>(type: "boolean", nullable: false),
-                    UsuarioCriadorId = table.Column<string>(type: "text", nullable: false),
-                    EtapaId = table.Column<string>(type: "text", nullable: false),
-                    DataEHoraDoOcorrido = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DataEHoraInicioAtendimento = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DataEHoraTerminoAtendimento = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EnderecoRua = table.Column<string>(type: "text", nullable: true),
-                    EnderecoNumero = table.Column<string>(type: "text", nullable: true),
-                    EnderecoComplemento = table.Column<string>(type: "text", nullable: true),
-                    EnderecoBairro = table.Column<string>(type: "text", nullable: true),
-                    EnderecoCEP = table.Column<string>(type: "text", nullable: true),
-                    SolicitanteNome = table.Column<string>(type: "text", nullable: true),
-                    SolicitanteCPF = table.Column<string>(type: "text", nullable: true),
-                    SolicitanteRG = table.Column<string>(type: "text", nullable: true),
-                    AnalisePreliminar = table.Column<string>(type: "text", nullable: false),
-                    CaracterizacaoDoLocal = table.Column<string>(type: "text", nullable: false),
-                    Edificacao = table.Column<string>(type: "text", nullable: false),
-                    Estrutura = table.Column<string>(type: "text", nullable: false),
-                    TipoDeRisco = table.Column<string>(type: "text", nullable: false),
-                    TipificacaoDaOcorrencia = table.Column<string>(type: "text", nullable: false),
-                    Motivacao = table.Column<string>(type: "text", nullable: false),
-                    AreasAfetadas = table.Column<string>(type: "text", nullable: false),
-                    GrauDeRisco = table.Column<string>(type: "text", nullable: true),
-                    RegimeDeOcupacaoDoImovel = table.Column<string>(type: "text", nullable: true),
-                    PossuiIPTU = table.Column<string>(type: "text", nullable: true),
-                    NumeroDeMoradias = table.Column<int>(type: "integer", nullable: true),
-                    NumeroDeComodos = table.Column<int>(type: "integer", nullable: true),
-                    NumeroDePavimentos = table.Column<int>(type: "integer", nullable: true),
-                    PossuiUnidadeFamiliar = table.Column<bool>(type: "boolean", nullable: true),
-                    NumeroDeDeficientes = table.Column<int>(type: "integer", nullable: true),
-                    NumeroDeCriancas = table.Column<int>(type: "integer", nullable: true),
-                    NumeroDeAdultos = table.Column<int>(type: "integer", nullable: true),
-                    NumeroDeIdosos = table.Column<int>(type: "integer", nullable: true),
-                    DataEntradaNaFaseAtual = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    OcorrenciaPaiId = table.Column<string>(type: "text", nullable: true)
+                    Protocolo = table.Column<string>(type: "text", nullable: false),
+                    isVisivel = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Campos_DataEHoraDoOcorrido = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    Campos_DataEHoraInicioAtendimento = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    Campos_DataEHoraTerminoAtendimento = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    Campos_Localizacao_Rua = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_Numero = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_Complemento = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_Bairro = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_CEP = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_Latitude = table.Column<string>(type: "text", nullable: true),
+                    Campos_Localizacao_Longitude = table.Column<string>(type: "text", nullable: true),
+                    Campos_Solicitante_Nome = table.Column<string>(type: "text", nullable: true),
+                    Campos_Solicitante_CPF = table.Column<string>(type: "text", nullable: true),
+                    Campos_Solicitante_Email = table.Column<string>(type: "text", nullable: true),
+                    Campos_Solicitante_Telefone = table.Column<string>(type: "text", nullable: true),
+                    Campos_AnalisePreliminar = table.Column<string>(type: "text", nullable: false),
+                    Campos_CaracterizacaoDoLocal = table.Column<string>(type: "text", nullable: false),
+                    Campos_Edificacao = table.Column<string>(type: "text", nullable: false),
+                    Campos_Estrutura = table.Column<string>(type: "text", nullable: false),
+                    Campos_TipoDeRisco = table.Column<string>(type: "text", nullable: false),
+                    Campos_TipificacaoDaOcorrencia = table.Column<string>(type: "text", nullable: false),
+                    Campos_Motivacao = table.Column<string>(type: "text", nullable: false),
+                    Campos_AreasAfetadas = table.Column<string>(type: "text", nullable: false),
+                    Campos_GrauDeRisco = table.Column<string>(type: "text", nullable: true),
+                    Campos_RegimeDeOcupacaoDoImovel = table.Column<string>(type: "text", nullable: true),
+                    Campos_PossuiIPTU = table.Column<string>(type: "text", nullable: true),
+                    Campos_NumeroDeMoradias = table.Column<int>(type: "integer", nullable: true),
+                    Campos_NumeroDeComodos = table.Column<int>(type: "integer", nullable: true),
+                    Campos_NumeroDePavimentos = table.Column<int>(type: "integer", nullable: true),
+                    Campos_PossuiUnidadeFamiliar = table.Column<bool>(type: "boolean", nullable: true),
+                    Campos_NumeroDeDeficientes = table.Column<int>(type: "integer", nullable: true),
+                    Campos_NumeroDeCriancas = table.Column<int>(type: "integer", nullable: true),
+                    Campos_NumeroDeAdultos = table.Column<int>(type: "integer", nullable: true),
+                    Campos_NumeroDeIdosos = table.Column<int>(type: "integer", nullable: true),
+                    DataEntradaNaFaseAtual = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    ResponsavelId = table.Column<string>(type: "text", nullable: true),
+                    EtapaId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Ocorrencias", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Ocorrencias_AspNetUsers_UsuarioCriadorId",
-                        column: x => x.UsuarioCriadorId,
+                        name: "FK_Ocorrencias_AspNetUsers_ResponsavelId",
+                        column: x => x.ResponsavelId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -304,12 +309,6 @@ namespace SIG_DefesaCivil.API.Migrations
                         principalTable: "Etapas",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Ocorrencias_Ocorrencias_OcorrenciaPaiId",
-                        column: x => x.OcorrenciaPaiId,
-                        principalTable: "Ocorrencias",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -317,14 +316,19 @@ namespace SIG_DefesaCivil.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    NomeOriginal = table.Column<string>(type: "text", nullable: false),
                     UrlArmazenamento = table.Column<string>(type: "text", nullable: false),
-                    IdArquivoExterno = table.Column<string>(type: "text", nullable: false),
-                    TipoConteudo = table.Column<string>(type: "text", nullable: false),
-                    TamanhoBytes = table.Column<long>(type: "bigint", nullable: false),
-                    DataUpload = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IdAnexoExterno = table.Column<string>(type: "text", nullable: false),
+                    DataUpload = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     EntidadeId = table.Column<string>(type: "text", nullable: false),
-                    TipoEntidade = table.Column<string>(type: "text", nullable: false),
+                    TipoEntidade = table.Column<int>(type: "integer", nullable: false),
+                    Localizacao_Rua = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_Numero = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_Complemento = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_Bairro = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_CEP = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_Latitude = table.Column<string>(type: "text", nullable: true),
+                    Localizacao_Longitude = table.Column<string>(type: "text", nullable: true),
+                    DataHoraCaptura = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     OcorrenciaId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -338,38 +342,14 @@ namespace SIG_DefesaCivil.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OcorrenciaNaturezas",
-                columns: table => new
-                {
-                    NaturezasId = table.Column<string>(type: "text", nullable: false),
-                    OcorrenciasId = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OcorrenciaNaturezas", x => new { x.NaturezasId, x.OcorrenciasId });
-                    table.ForeignKey(
-                        name: "FK_OcorrenciaNaturezas_Naturezas_NaturezasId",
-                        column: x => x.NaturezasId,
-                        principalTable: "Naturezas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OcorrenciaNaturezas_Ocorrencias_OcorrenciasId",
-                        column: x => x.OcorrenciasId,
-                        principalTable: "Ocorrencias",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OcorrenciasHistoricos",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    OcorrenciaId = table.Column<string>(type: "text", nullable: false),
-                    UsuarioId = table.Column<string>(type: "text", nullable: false),
                     Acao = table.Column<string>(type: "text", nullable: false),
-                    UltimaAlteracao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Horarios = table.Column<List<DateTime>>(type: "timestamp without time zone[]", nullable: false),
+                    OcorrenciaId = table.Column<string>(type: "text", nullable: false),
+                    UsuarioId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -388,10 +368,45 @@ namespace SIG_DefesaCivil.API.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Anexos_EntidadeId_TipoEntidade",
-                table: "Anexos",
-                columns: new[] { "EntidadeId", "TipoEntidade" });
+            migrationBuilder.CreateTable(
+                name: "Trasicoes",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    DataEHorario = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    OcorrenciaId = table.Column<string>(type: "text", nullable: false),
+                    ResponsavelId = table.Column<string>(type: "text", nullable: false),
+                    EtapaAtualId = table.Column<string>(type: "text", nullable: false),
+                    EtapaAnteriorId = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Trasicoes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Trasicoes_AspNetUsers_ResponsavelId",
+                        column: x => x.ResponsavelId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Trasicoes_Etapas_EtapaAnteriorId",
+                        column: x => x.EtapaAnteriorId,
+                        principalTable: "Etapas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Trasicoes_Etapas_EtapaAtualId",
+                        column: x => x.EtapaAtualId,
+                        principalTable: "Etapas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Trasicoes_Ocorrencias_OcorrenciaId",
+                        column: x => x.OcorrenciaId,
+                        principalTable: "Ocorrencias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Anexos_OcorrenciaId",
@@ -446,24 +461,14 @@ namespace SIG_DefesaCivil.API.Migrations
                 column: "NaturezaPaiId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OcorrenciaNaturezas_OcorrenciasId",
-                table: "OcorrenciaNaturezas",
-                column: "OcorrenciasId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Ocorrencias_EtapaId",
                 table: "Ocorrencias",
                 column: "EtapaId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Ocorrencias_OcorrenciaPaiId",
+                name: "IX_Ocorrencias_ResponsavelId",
                 table: "Ocorrencias",
-                column: "OcorrenciaPaiId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Ocorrencias_UsuarioCriadorId",
-                table: "Ocorrencias",
-                column: "UsuarioCriadorId");
+                column: "ResponsavelId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OcorrenciasHistoricos_OcorrenciaId",
@@ -485,6 +490,26 @@ namespace SIG_DefesaCivil.API.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trasicoes_EtapaAnteriorId",
+                table: "Trasicoes",
+                column: "EtapaAnteriorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trasicoes_EtapaAtualId",
+                table: "Trasicoes",
+                column: "EtapaAtualId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trasicoes_OcorrenciaId",
+                table: "Trasicoes",
+                column: "OcorrenciaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trasicoes_ResponsavelId",
+                table: "Trasicoes",
+                column: "ResponsavelId");
         }
 
         /// <inheritdoc />
@@ -509,7 +534,7 @@ namespace SIG_DefesaCivil.API.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "OcorrenciaNaturezas");
+                name: "Naturezas");
 
             migrationBuilder.DropTable(
                 name: "OcorrenciasHistoricos");
@@ -518,10 +543,10 @@ namespace SIG_DefesaCivil.API.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "Trasicoes");
 
             migrationBuilder.DropTable(
-                name: "Naturezas");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Ocorrencias");

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.Constants;
+using SIG_DefesaCivil.API.Data.Constantes;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Services;
 
@@ -20,7 +20,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // GET: api/Quadro
         [HttpGet]
-        [ProducesResponseType(typeof(List<QuadroDetalhesDTO>), 200)]
+        [ProducesResponseType(typeof(List<QuadroDTO>), 200)]
         public async Task<IActionResult> ListarTodos()
         {
             var quadros = await _service.ListarTodosAsync();
@@ -29,7 +29,7 @@ namespace SIG_DefesaCivil.API.Controllers
 
         // GET: api/Quadro/{id}
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(QuadroDetalhesDTO), 200)]
+        [ProducesResponseType(typeof(QuadroDTO), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> ObterPorId(string id)
         {

@@ -1,7 +1,7 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
+using SIG_DefesaCivil.API.Mappers;
 using SIG_DefesaCivil.API.Models;
 
 namespace SIG_DefesaCivil.API.Services
@@ -9,12 +9,10 @@ namespace SIG_DefesaCivil.API.Services
     public class NaturezaService
     {
         private readonly DefesaCivilDbContext _context;
-        private readonly IMapper _mapper;
 
-        public NaturezaService(DefesaCivilDbContext context, IMapper mapper)
+        public NaturezaService(DefesaCivilDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         public async Task<List<NaturezaDTO>> GetAllAsync()
@@ -28,7 +26,7 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderBy(n => n.CodigoNatureza)
                 .ToList();
 
-            return _mapper.Map<List<NaturezaDTO>>(raizes);
+            return raizes.Select(raiz => raiz.ToDto()).ToList();
         }
 
         public async Task<NaturezaDTO> GetByCodigoAsync(string codigo)
@@ -37,7 +35,7 @@ namespace SIG_DefesaCivil.API.Services
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
 
-            return _mapper.Map<NaturezaDTO>(natureza);
+            return natureza.ToDto();
         }
 
         public async Task<NaturezaDTO> GetByIdAsync(string id)
@@ -46,7 +44,7 @@ namespace SIG_DefesaCivil.API.Services
             if (natureza is null)
                 throw new ArgumentException("Natureza não encontrada");
 
-            return _mapper.Map<NaturezaDTO>(natureza);
+            return natureza.ToDto();
         }
 
         public async Task<NaturezaDTO> CreateAsync(CreateNaturezaDTO dto)
@@ -64,14 +62,14 @@ namespace SIG_DefesaCivil.API.Services
                 naturezaPaiId = naturezaPai.Id;
             }
 
-            var natureza = _mapper.Map<Natureza>(dto);
+            var natureza = dto.ToEntity();
             natureza.Id = Guid.NewGuid().ToString();
             natureza.NaturezaPaiId = naturezaPaiId;
 
             _context.Naturezas.Add(natureza);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<NaturezaDTO>(natureza);
+            return natureza.ToDto();
         }
 
         public async Task<bool> UpdateAsync(string id, CreateNaturezaDTO dto)
@@ -130,7 +128,7 @@ namespace SIG_DefesaCivil.API.Services
                 .Where(n => n.NaturezaPaiId == natureza.NaturezaPaiId && n.Id != natureza.Id)
                 .ToListAsync();
 
-            return _mapper.Map<List<NaturezaDTO>>(irmas);
+            return irmas.Select(n => n.ToDto()).ToList();
         }
 
         private async Task ValidarCodigoDuplicado(string codigo)

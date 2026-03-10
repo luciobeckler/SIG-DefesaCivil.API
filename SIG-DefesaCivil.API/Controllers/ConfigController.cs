@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.Constants;
+using SIG_DefesaCivil.API.Data.Constantes;
 
 namespace SIG_DefesaCivil.API.Controllers
 {

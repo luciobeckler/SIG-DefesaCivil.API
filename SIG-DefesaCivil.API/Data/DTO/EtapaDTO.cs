@@ -4,26 +4,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SIG_DefesaCivil.API.Data.DTO
 {
-    public class EtapaDTO : EtapaBaseDTO
+    public class EtapaDTO : CriaOuAtualizaEtapaDTO
     {
         public string Id { get; set; }
 
-        // Inclui os ocorrencias (cartões) para renderizar o quadro
-        public List<OcorrenciaDetalhesDTO> Ocorrencias { get; set; } = new List<OcorrenciaDetalhesDTO>();
+        public List<OcorrenciaDTO> Ocorrencias { get; set; } = new List<OcorrenciaDTO>();
     }
 
-    public class CriaOuAtualizaEtapaDTO : EtapaBaseDTO
-    {
-
-    }
-
-    public class ReordenarEtapaDTO
-    {
-        // Lista de IDs na nova ordem desejada
-        public List<string> IdsDasEtapasNaOrdem { get; set; } = new List<string>();
-    }
-
-    public class EtapaBaseDTO : RegrasDeTransicaoEtapaDTO
+    public class CriaOuAtualizaEtapaDTO : RegrasDeTransicaoEtapaDTO
     {
         [Required]
         public string Nome { get; set; }
@@ -32,6 +20,13 @@ namespace SIG_DefesaCivil.API.Data.DTO
         [Required]
         public string QuadroId { get; set; }
     }
+
+    public class ReordenarEtapaDTO
+    {
+        // Lista de IDs na nova ordem desejada
+        public List<string> IdsDasEtapasNaOrdem { get; set; } = new List<string>();
+    }
+
 
     public class RegrasDeTransicaoEtapaDTO
     {

@@ -15,16 +15,16 @@ namespace SIG_DefesaCivil.API.Controllers
 
         [HttpPost("{ocorrenciaId}/anexos")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadArquivos([FromRoute] string ocorrenciaId, [FromForm] UploadAnexosDTO dto)
+        public async Task<IActionResult> UploadAnexos([FromRoute] string ocorrenciaId, [FromForm] ListaDeAnexosDTO dto)
         {
             // O [FromForm] no DTO popula as propriedades automaticamente
             try
             {
                 // Validação básica manual se necessário
-                if (dto.Arquivos == null || !dto.Arquivos.Any())
-                    return BadRequest("Nenhum arquivo enviado.");
+                if (dto.Anexos == null || !dto.Anexos.Any())
+                    return BadRequest("Nenhum anexo enviado.");
 
-                var anexos = await _anexoService.SalvarAnexosEmLoteAsync(dto.Arquivos, ocorrenciaId, dto.Entidade);
+                var anexos = await _anexoService.SalvarAnexosEmLoteAsync(dto.Anexos, ocorrenciaId, dto.TipoEntidade);
                 return Ok(anexos);
             }
             catch (ArgumentException ex) // Erros de validação (tamanho, tipo)
@@ -34,7 +34,7 @@ namespace SIG_DefesaCivil.API.Controllers
             catch (Exception)
             {
                 // Logar ex
-                return StatusCode(500, "Erro interno ao processar arquivos.");
+                return StatusCode(500, "Erro interno ao processar anexos.");
             }
         }
 
@@ -45,7 +45,7 @@ namespace SIG_DefesaCivil.API.Controllers
         {
             try
             {
-                await _anexoService.RemoverAnexosAsync(dto.EntidadeTipo, entidadeId, dto.IdsAnexos);
+                await _anexoService.RemoverAnexosAsync(dto.IdsAnexos);
                 return NoContent();
             }
             catch (Exception ex)

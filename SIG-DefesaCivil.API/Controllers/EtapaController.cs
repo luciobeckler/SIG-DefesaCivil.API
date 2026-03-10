@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SIG_DefesaCivil.API.Constants;
+using SIG_DefesaCivil.API.Data.Constantes;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;

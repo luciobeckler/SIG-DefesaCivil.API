@@ -1,33 +1,29 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
-using SIG_DefesaCivil.API.Models;
+using SIG_DefesaCivil.API.Mappers;
 
 namespace SIG_DefesaCivil.API.Services
 {
     public class QuadroService
     {
         private readonly DefesaCivilDbContext _context;
-        private readonly IMapper _mapper;
 
-        public QuadroService(DefesaCivilDbContext context, IMapper mapper)
+        public QuadroService(DefesaCivilDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
-        public async Task<List<QuadroDetalhesDTO>> ListarTodosAsync()
+        public async Task<List<QuadroDTO>> ListarTodosAsync()
         {
             var quadros = await _context.Quadros
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(q => q.Etapas)
                     .ThenInclude(e => e.Ocorrencias)
-                        .ThenInclude(ev => ev.UsuarioCriador)
+                        .ThenInclude(ev => ev.Responsavel)
                 .Include(q => q.Etapas)
                     .ThenInclude(e => e.Ocorrencias)
-                        .ThenInclude(ev => ev.Naturezas)
                 .ToListAsync();
 
             foreach (var quadro in quadros)
@@ -40,20 +36,21 @@ namespace SIG_DefesaCivil.API.Services
                 }
             }
 
-            return _mapper.Map<List<QuadroDetalhesDTO>>(quadros);
+            return quadros
+                .Select(q => q.ToDto())
+                .ToList();
         }
 
-        public async Task<QuadroDetalhesDTO> ObterPorIdAsync(string id)
+        public async Task<QuadroDTO> ObterPorIdAsync(string id)
         {
             var quadro = await _context.Quadros
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(q => q.Etapas)
                     .ThenInclude(e => e.Ocorrencias)
-                        .ThenInclude(ev => ev.UsuarioCriador)
+                        .ThenInclude(ev => ev.Responsavel)
                 .Include(q => q.Etapas)
                     .ThenInclude(e => e.Ocorrencias)
-                        .ThenInclude(ev => ev.Naturezas)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
             if (quadro == null)
@@ -63,18 +60,18 @@ namespace SIG_DefesaCivil.API.Services
                 .OrderBy(s => s.Posicao)
                 .ToList();
 
-            return _mapper.Map<QuadroDetalhesDTO>(quadro);
+            return quadro.ToDto();
         }
 
         public async Task<QuadroDTO> CriarAsync(CriarOuEditarQuadroDTO dto)
         {
-            var quadro = _mapper.Map<Quadro>(dto);
+            var quadro = dto.ToEntity();
             quadro.Id = Guid.NewGuid().ToString();
 
             _context.Quadros.Add(quadro);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<QuadroDTO>(quadro);
+            return quadro.ToDto();
         }
 
         public async Task AtualizarAsync(string id, CriarOuEditarQuadroDTO dto)
