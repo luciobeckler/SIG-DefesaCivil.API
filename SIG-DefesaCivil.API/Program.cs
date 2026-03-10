@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Data.Context;
-using SIG_DefesaCivil.API.Helper;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 using SIG_DefesaCivil.API.Services.TokenGenerator;
@@ -31,11 +30,6 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    // Adicione esta linha:
-    c.SchemaFilter<SIG_DefesaCivil.API.Helper.EnumListSchemaFilter>();
-});
 
 string connectionName;
 
@@ -186,10 +180,8 @@ builder.Services.AddAuthorization(options =>
 // Services e repositorys
 builder.Services.AddScoped<TokenService>();
 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile<AutoMapperProfile>();
-});
+
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 

@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.Enums;
+using SIG_DefesaCivil.API.Mappers;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 
@@ -11,12 +11,10 @@ namespace SIG_DefesaCivil.API.Services
     public class EtapaService
     {
         private readonly DefesaCivilDbContext _context;
-        private readonly IMapper _mapper;
 
-        public EtapaService(DefesaCivilDbContext context, IMapper mapper)
+        public EtapaService(DefesaCivilDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         public async Task<EtapaDTO> CriarAsync(CriaOuAtualizaEtapaDTO dto)
@@ -31,14 +29,14 @@ namespace SIG_DefesaCivil.API.Services
             if (posicaoPreenchida != null)
                 throw new ArgumentException("Posição já se encontra preenchida");
 
-            var etapa = _mapper.Map<Etapa>(dto);
+            var etapa = dto.ToEntity();
             etapa.Id = Guid.NewGuid().ToString();
             etapa.Posicao = dto.Posicao;
 
             _context.Etapas.Add(etapa);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<EtapaDTO>(etapa);
+            return etapa.ToDto();
         }
 
         public async Task AtualizarAsync(string id, CriaOuAtualizaEtapaDTO dto)
@@ -94,7 +92,7 @@ namespace SIG_DefesaCivil.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task AdicionaOcorrenciaNaPrimeiraEtapaAsync(Usuario usuario, Ocorrencia ocorrencia, string quadroId)
+        public async Task AdicionaOcorrenciaNaPrimeiraEtapaAsync(Ocorrencia ocorrencia, string quadroId)
         {
             var primeiraEtapa = await _context.Etapas
                 .Where(e => e.QuadroId == quadroId)
@@ -106,7 +104,6 @@ namespace SIG_DefesaCivil.API.Services
                 throw new InvalidOperationException("Este quadro não possui etapas cadastradas.");
             }
 
-            VerificaPermissaoParaMudarParaFase(usuario, primeiraEtapa);
 
             primeiraEtapa.Ocorrencias.Add(ocorrencia);
         }

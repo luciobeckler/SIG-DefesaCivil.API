@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
@@ -18,44 +19,45 @@ public class AnexoService
         _context = context;
     }
 
-    public async Task<List<Anexo>> SalvarAnexosEmLoteAsync(List<ArquivoUploadDTO> fileData, string entidadeId, ETiposEntidades tipoEntidade)
+    public async Task<List<Anexo>> SalvarAnexosEmLoteAsync(List<AnexoUploadDTO> fileData, string entidadeId, ETiposEntidades tipoEntidade)
     {
         var anexosParaSalvar = new List<Anexo>();
 
         // 1. Validação Prévia (Fail Fast)
         foreach (var item in fileData)
         {
-            // CRÍTICA APLICADA: Tem que acessar a propriedade .Arquivo
+            // CRÍTICA APLICADA: Tem que acessar a propriedade .Anexo
             if (item == null)
-                throw new ArgumentException("Um dos itens não contém um arquivo válido.");
+                throw new ArgumentException("Um dos itens não contém um anexo válido.");
 
-            if (item.Arquivo.Length > MaxFileSize)
-                throw new ArgumentException($"O arquivo {item.Arquivo.FileName} excede 5MB.");
+            if (item.Anexo.Length > MaxFileSize)
+                throw new ArgumentException($"O anexo {item.Anexo.FileName} excede 5MB.");
 
-            if (!AllowedMimeTypes.Contains(item.Arquivo.ContentType))
-                throw new ArgumentException($"Tipo de arquivo não permitido: {item.Arquivo.ContentType}");
+            if (!AllowedMimeTypes.Contains(item.Anexo.ContentType))
+                throw new ArgumentException($"Tipo de anexo não permitido: {item.Anexo.ContentType}");
         }
 
         // 2. Upload Paralelo para o Google Drive
         var uploadTasks = fileData.Select(async item =>
         {
             // CRÍTICA APLICADA: Passar o IFormFile para o Drive
-            var result = await _googleDriveService.UploadFileAsync(item.Arquivo);
+            var result = await _googleDriveService.UploadFileAsync(item.Anexo);
 
             return new Anexo
             {
                 Id = Guid.NewGuid().ToString(),
-                NomeOriginal = item.Arquivo.FileName,
                 UrlArmazenamento = result.WebViewLink,
-                IdArquivoExterno = result.FileId,
-                TipoConteudo = item.Arquivo.ContentType,
-                TamanhoBytes = item.Arquivo.Length,
+                EntidadeId = entidadeId,
+                NomeOriginal = item.Anexo.FileName,
+                TamanhoBytes = item.Anexo.Length,
+                TipoConteudo = item.Anexo.ContentType,
+                IdAnexoExterno = result.FileId,
                 TipoEntidade = tipoEntidade,
                 DataUpload = DateTime.UtcNow,
                 Localizacao =
                 {
-                    Longitude = item.Localizacao.Longitude,
-                    Latitude = item.Localizacao.Latitude
+                    Latitude = item.Latitude,
+                    Longitude = item.Longitude
                 },
                 DataHoraCaptura = item.DataHoraCaptura
             };
@@ -74,7 +76,7 @@ public class AnexoService
         }
         catch (Exception ex)
         {
-            var idsParaApagar = anexosParaSalvar.Select(a => a.IdArquivoExterno).Where(id => !string.IsNullOrEmpty(id));
+            var idsParaApagar = anexosParaSalvar.Select(a => a.IdAnexoExterno).Where(id => !string.IsNullOrEmpty(id));
             foreach (var idDrive in idsParaApagar)
             {
                 await _googleDriveService.DeleteFileAsync(idDrive);
@@ -83,15 +85,12 @@ public class AnexoService
         }
     }
 
-    public async Task RemoverAnexosAsync(ETiposEntidades entidadeTipo, string entidadeId, List<string> idsAnexosParaRemover)
+    public async Task RemoverAnexosAsync(List<string> idsAnexosParaRemover)
     {
-        // ... (Mantido exatamente igual ao seu código, a lógica de remoção está correta)
-        if (idsAnexosParaRemover == null || !idsAnexosParaRemover.Any()) return;
+        if (idsAnexosParaRemover.IsNullOrEmpty()) return;
 
         var anexos = await _context.Anexos
-            .Where(a => idsAnexosParaRemover.Contains(a.Id)
-                     && a.EntidadeId == entidadeId
-                     && a.TipoEntidade == entidadeTipo)
+            .Where(a => idsAnexosParaRemover.Contains(a.Id))
             .ToListAsync();
 
         if (!anexos.Any()) return;
@@ -110,8 +109,8 @@ public class AnexoService
         }
 
         var tasksDelecao = anexos
-            .Where(x => !string.IsNullOrEmpty(x.IdArquivoExterno))
-            .Select(a => _googleDriveService.DeleteFileAsync(a.IdArquivoExterno));
+            .Where(x => !string.IsNullOrEmpty(x.IdAnexoExterno))
+            .Select(a => _googleDriveService.DeleteFileAsync(a.IdAnexoExterno));
 
         await Task.WhenAll(tasksDelecao);
     }

@@ -13,19 +13,14 @@ namespace SIG_DefesaCivil.API.Data.DTO.Ocorrencia
 
         public Endereco? Localizacao { get; set; }
 
-        public string? SolicitanteNome { get; set; }
-        public string? SolicitanteCPF { get; set; }
-        public string? SolicitanteRG { get; set; }
+        public Solicitante? Solicitante { get; set; }
 
         // Classificações
-        [Required(ErrorMessage = "O Grau de Risco é obrigatório.")]
         [EnumDataType(typeof(EGrauRisco), ErrorMessage = "Valor inválido para Grau de Risco.")]
-        public string GrauDeRisco { get; set; }
+        public string? GrauDeRisco { get; set; }
 
         [EnumDataType(typeof(ERegimeOcupacao), ErrorMessage = "Valor inválido para Regime de Ocupação.")]
         public string? RegimeDeOcupacaoDoImovel { get; set; }
-
-        // --- Validações de Lista de Enums ---
 
         [EnumList(typeof(EAnalisePreliminar))]
         public List<string>? AnalisePreliminar { get; set; } = new();

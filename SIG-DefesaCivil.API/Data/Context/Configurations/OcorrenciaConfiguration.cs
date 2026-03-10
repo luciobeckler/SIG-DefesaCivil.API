@@ -11,24 +11,14 @@ namespace SIG_DefesaCivil.API.Data.Context.Configurations
         {
             builder.ToTable("Ocorrencias");
 
-            // --- 1. Relacionamentos da Entidade Pai ---
-            builder.HasMany(e => e.SubOcorrencias)
-                   .WithOne(e => e.OcorrenciaPai)
-                   .HasForeignKey(e => e.OcorrenciaPaiId)
-                   .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasMany(e => e.Naturezas)
-                   .WithMany(n => n.Ocorrencias)
-                   .UsingEntity(j => j.ToTable("OcorrenciaNaturezas"));
-
             builder.HasMany(e => e.Transicoes)
                     .WithOne(e => e.Ocorrencia)
                     .HasForeignKey(e => e.OcorrenciaId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(e => e.UsuarioCriador)
-                   .WithMany(u => u.OcorrenciasCriados)
-                   .HasForeignKey(e => e.UsuarioCriadorId)
+            builder.HasOne(e => e.Responsavel)
+                   .WithMany(u => u.OcorrenciasCriados) // Assumindo que a propriedade no Usuario seja OcorrenciasCriados
+                   .HasForeignKey(e => e.ResponsavelId)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Etapa)
@@ -39,15 +29,9 @@ namespace SIG_DefesaCivil.API.Data.Context.Configurations
             // --- 2. Mapeamento do Value Object (Campos) ---
             builder.OwnsOne(e => e.Campos, campos =>
             {
-                // Dica: O EF Core vai criar colunas no banco com o prefixo do objeto (ex: "Campos_GrauDeRisco").
-                // Se você quiser que a coluna no banco se chame apenas "GrauDeRisco", descomente a linha abaixo para cada campo:
-                // campos.Property(c => c.GrauDeRisco).HasColumnName("GrauDeRisco");
-
-                // Single Selects (salvar como string)
+                // Single Selects 
                 campos.Property(c => c.GrauDeRisco).HasConversion<string>();
                 campos.Property(c => c.RegimeDeOcupacaoDoImovel).HasConversion<string>();
-
-                campos.Navigation(c => c.Localizacao).IsRequired();
 
                 // Listas de Enums
                 campos.ConfigureEnumList(c => c.AnalisePreliminar);

@@ -9,14 +9,14 @@ namespace SIG_DefesaCivil.API.Models
 
         public string NomeOriginal { get; set; }
         public string UrlArmazenamento { get; set; }
-        public string IdArquivoExterno { get; set; }
+        public string IdAnexoExterno { get; set; }
         public string TipoConteudo { get; set; }
         public long TamanhoBytes { get; set; }
         public DateTime DataUpload { get; set; } = DateTime.UtcNow;
         public string EntidadeId { get; set; }
         public ETiposEntidades TipoEntidade { get; set; }
 
-        public Endereco? Localizacao { get; set; }
+        public Endereco? Localizacao { get; set; } = new Endereco();
         public DateTime? DataHoraCaptura { get; set; }
     }
 

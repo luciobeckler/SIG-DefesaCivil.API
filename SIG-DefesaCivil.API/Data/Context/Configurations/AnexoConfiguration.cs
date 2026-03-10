@@ -12,9 +12,8 @@ namespace SIG_DefesaCivil.API.Data.Context.Configurations
 
             builder.HasKey(a => a.Id);
 
-            builder.Property(a => a.NomeOriginal).IsRequired();
             builder.Property(a => a.UrlArmazenamento).IsRequired();
-            builder.Property(a => a.IdArquivoExterno).IsRequired();
+            builder.Property(a => a.IdAnexoExterno).IsRequired();
             builder.Property(a => a.TipoEntidade).IsRequired();
         }
     }

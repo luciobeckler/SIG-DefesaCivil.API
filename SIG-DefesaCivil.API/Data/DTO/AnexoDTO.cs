@@ -16,24 +16,24 @@ namespace SIG_DefesaCivil.API.Data.DTO
     }
 
     // 2. DTO de Entrada para Upload (Input)
-    public class UploadAnexosDTO
+    public class ListaDeAnexosDTO
     {
         public ETiposEntidades TipoEntidade { get; set; }
-        public List<ArquivoUploadDTO> Arquivos { get; set; } = new List<ArquivoUploadDTO>();
+        public List<AnexoUploadDTO> Anexos { get; set; } = new List<AnexoUploadDTO>();
     }
 
     // 3. Objeto complexo filho
-    public class ArquivoUploadDTO
+    public class AnexoUploadDTO
     {
-        public IFormFile Arquivo { get; set; }
-        public Endereco Localizacao { get; set; }
+        public IFormFile Anexo { get; set; }
+        public string? Latitude { get; set; }
+        public string? Longitude { get; set; }
         public DateTime? DataHoraCaptura { get; set; }
     }
 
     // 4. DTO para Remoção em Lote
     public class RemocaoAnexosDTO
     {
-        public ETiposEntidades TipoEntidade { get; set; }
         public List<string> IdsAnexos { get; set; } = new List<string>();
     }
 }

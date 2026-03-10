@@ -10,10 +10,7 @@ namespace SIG_DefesaCivil.API.Data.Models.Shared
         public DateTime? DataEHoraInicioAtendimento { get; set; }
         public DateTime? DataEHoraTerminoAtendimento { get; set; }
         public Endereco? Localizacao { get; set; }
-        public string? SolicitanteNome { get; set; }
-        public string? SolicitanteCPF { get; set; }
-        public string? SolicitanteRG { get; set; }
-
+        public Solicitante? Solicitante { get; set; }
         public List<EAnalisePreliminar> AnalisePreliminar { get; set; } = new List<EAnalisePreliminar>();
         public List<ECaracterizacaoLocal> CaracterizacaoDoLocal { get; set; } = new List<ECaracterizacaoLocal>();
         public List<ETipoEdificacao> Edificacao { get; set; } = new List<ETipoEdificacao>();

@@ -13,8 +13,5 @@ namespace SIG_DefesaCivil.API.Models
         public string? NaturezaPaiId { get; set; }
         public Natureza? NaturezaPai { get; set; }
         public List<Natureza>? SubNaturezas { get; set; } = new List<Natureza>();
-
-        // N-N com ocorrencias
-        public List<Ocorrencia.Ocorrencia> Ocorrencias { get; set; } = new List<Ocorrencia.Ocorrencia>();
     }
 }

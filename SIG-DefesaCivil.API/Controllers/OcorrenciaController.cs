@@ -1,9 +1,9 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
+using SIG_DefesaCivil.API.Mappers;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
 
@@ -16,19 +16,17 @@ namespace SIG_DefesaCivil.API.Controllers
     {
         private readonly OcorrenciaService _ocorrenciaService;
         private readonly UsuarioService _usuarioService;
-        private readonly IMapper _mapper;
         private readonly UserManager<Usuario> _userManager;
 
-        public OcorrenciaController(OcorrenciaService ocorrenciaService, UsuarioService usuarioService, IMapper mapper, UserManager<Usuario> userManager)
+        public OcorrenciaController(OcorrenciaService ocorrenciaService, UsuarioService usuarioService, UserManager<Usuario> userManager)
         {
             _ocorrenciaService = ocorrenciaService;
             _usuarioService = usuarioService;
-            _mapper = mapper;
             _userManager = userManager;
         }
 
         [HttpGet("{id:guid}/detalhes")]
-        [ProducesResponseType(typeof(OcorrenciaOffilineDTO), 200)]
+        [ProducesResponseType(typeof(OcorrenciaDTO), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(403)]
         public async Task<IActionResult> GetDetalhesById(string id)
@@ -57,18 +55,18 @@ namespace SIG_DefesaCivil.API.Controllers
 
         [HttpPost]
         [Consumes("application/json")]
-        [ProducesResponseType(typeof(OcorrenciaOffilineDTO), 201)]
+        [ProducesResponseType(typeof(OcorrenciaDTO), 201)]
         [ProducesResponseType(400)]
         public async Task<IActionResult>
-            te(
+            Create(
         [FromBody] CreateOrEditOcorrenciaDTO dto,
         [FromQuery] string quadroId)
         {
             try
             {
                 var usuario = await _usuarioService.GetUsuarioAtual(User);
-                var ocorrenciaEntity = await _ocorrenciaService.CriarAsync(usuario, quadroId, dto);
-                var ocorrenciaDto = _mapper.Map<OcorrenciaOffilineDTO>(ocorrenciaEntity);
+                var ocorrenciaEntity = await _ocorrenciaService.CriarAsync(quadroId, dto, usuario);
+                var ocorrenciaDto = ocorrenciaEntity.ToDto();
 
                 return CreatedAtAction(nameof(GetDetalhesById), new { id = ocorrenciaEntity.Id }, ocorrenciaDto);
             }
