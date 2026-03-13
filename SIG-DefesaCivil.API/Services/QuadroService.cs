@@ -41,6 +41,11 @@ namespace SIG_DefesaCivil.API.Services
                 .ToList();
         }
 
+        public List<string> GetQuadrosId()
+        {
+            return _context.Quadros.Select(q => q.Id).ToList();
+        }
+
         public async Task<QuadroDTO> ObterPorIdAsync(string id)
         {
             var quadro = await _context.Quadros

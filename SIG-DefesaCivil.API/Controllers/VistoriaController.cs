@@ -17,11 +17,13 @@ namespace SIG_DefesaCivil.API.Controllers
         private readonly OcorrenciaService _ocorrenciaService;
         // Injete o serviço de anexos que você já construiu anteriormente
         private readonly AnexoService _anexoService;
+        private readonly QuadroService _quadroService;
 
-        public VistoriaController(OcorrenciaService ocorrenciaService, AnexoService anexoService)
+        public VistoriaController(OcorrenciaService ocorrenciaService, AnexoService anexoService, QuadroService quadroService)
         {
             _ocorrenciaService = ocorrenciaService;
             _anexoService = anexoService;
+            _quadroService = quadroService;
         }
 
         [HttpPost]
@@ -31,7 +33,6 @@ namespace SIG_DefesaCivil.API.Controllers
         public async Task<IActionResult> Create(
         [FromForm] string dadosJson,
         [FromForm] IFormFileCollection fotos,
-        [FromQuery] string quadroId,
         [FromQuery] ETipoCadastroOcorrencia tipoCadastroOcorrencia)
         {
             try
@@ -44,7 +45,10 @@ namespace SIG_DefesaCivil.API.Controllers
                     PropertyNameCaseInsensitive = true
                 });
 
-                var ocorrencia = await _ocorrenciaService.CriarAsync(quadroId, dto.ToCreateOcorrenciaDTO(tipoCadastroOcorrencia), null);
+
+                var quadros = _quadroService.GetQuadrosId();
+
+                var ocorrencia = await _ocorrenciaService.CriarAsync(quadros[0], dto.ToCreateOcorrenciaDTO(tipoCadastroOcorrencia), null);
 
                 if (fotos != null && fotos.Any())
                 {
