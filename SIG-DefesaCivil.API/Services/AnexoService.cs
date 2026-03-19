@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Models;
-using SIG_DefesaCivil.API.Services;
+using SIG_DefesaCivil.API.Services.Integration;
 
 public class AnexoService
 {

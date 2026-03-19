@@ -1,7 +1,7 @@
 ﻿using Google.Apis.Drive.v3;
-using Google.Apis.Upload; // Importante para o IUploadProgress
+using Google.Apis.Upload;
 
-namespace SIG_DefesaCivil.API.Services
+namespace SIG_DefesaCivil.API.Services.Integration
 {
     public class GoogleDriveUploadResult
     {

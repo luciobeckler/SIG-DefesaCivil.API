@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SIG_DefesaCivil.API.Data.Context;
@@ -12,9 +13,11 @@ using SIG_DefesaCivil.API.Data.Context;
 namespace SIG_DefesaCivil.API.Migrations
 {
     [DbContext(typeof(DefesaCivilDbContext))]
-    partial class DefesaCivilDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260316190816_Adicionando campo colunaExcel na ocorrencia")]
+    partial class AdicionandocampocolunaExcelnaocorrencia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -310,6 +313,9 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<int?>("ColunaExcel")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -319,9 +325,6 @@ namespace SIG_DefesaCivil.API.Migrations
                     b.Property<string>("EtapaId")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int?>("LinhaExcel")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Protocolo")
                         .IsRequired()

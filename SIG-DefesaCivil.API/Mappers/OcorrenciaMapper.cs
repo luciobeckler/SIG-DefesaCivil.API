@@ -1,20 +1,18 @@
 ﻿using SIG_DefesaCivil.API.Data.DTO;
 using SIG_DefesaCivil.API.Data.DTO.Ocorrencia;
 using SIG_DefesaCivil.API.Data.Enums;
+using SIG_DefesaCivil.API.Data.Models.Shared;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
 
 namespace SIG_DefesaCivil.API.Mappers
 {
     public static class OcorrenciaMapper
     {
-        public static Ocorrencia ToEntity(this CreateOrEditOcorrenciaDTO dto)
+        public static OcorrenciaCampos ToCamposEntity(this CreateOrEditOcorrenciaDTO dto)
         {
             if (dto == null) return null!;
 
-            return new Ocorrencia
-            {
-                Campos = dto.Campos.ToEntity(),
-            };
+            return dto.Campos.ToEntity();
         }
 
         public static OcorrenciaDTO ToDto(this Ocorrencia entity)

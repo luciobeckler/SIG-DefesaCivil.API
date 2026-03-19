@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -11,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIG_DefesaCivil.API.Data.Context;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Services;
+using SIG_DefesaCivil.API.Services.Integration;
 using SIG_DefesaCivil.API.Services.TokenGenerator;
 using SIG_DefesaCivil.API.Workers;
 using System.Text;
@@ -92,8 +94,33 @@ builder.Services.AddSingleton<DriveService>(sp =>
     });
 });
 
-// 2. Registrar seu wrapper como Scoped (Um por requisição)
+builder.Services.AddSingleton<SheetsService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var clientEmail = config["GoogleSheets:client_email"];
+    var privateKey = config["GoogleSheets:private_key"]?.Replace("\\n", "\n");
+
+    if (string.IsNullOrEmpty(clientEmail) || string.IsNullOrEmpty(privateKey))
+    {
+        throw new ArgumentNullException("Credenciais do Google Sheets ausentes na configuração.");
+    }
+
+    var credential = new ServiceAccountCredential(
+        new ServiceAccountCredential.Initializer(clientEmail)
+        {
+            Scopes = new[] { SheetsService.Scope.Spreadsheets }
+        }.FromPrivateKey(privateKey));
+
+    return new SheetsService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = credential,
+        ApplicationName = "SIG-DefesaCivil"
+    });
+});
+
 builder.Services.AddScoped<GoogleDriveService>();
+builder.Services.AddScoped<GoogleSheetsIntegrationService>();
 
 //Configurando características da senha
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>

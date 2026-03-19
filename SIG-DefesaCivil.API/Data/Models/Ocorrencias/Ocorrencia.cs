@@ -7,6 +7,7 @@ namespace SIG_DefesaCivil.API.Models.Ocorrencia
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Protocolo { get; set; }
+        public int? LinhaExcel { get; set; }
         public bool isVisivel { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public OcorrenciaCampos Campos { get; set; } = new OcorrenciaCampos();

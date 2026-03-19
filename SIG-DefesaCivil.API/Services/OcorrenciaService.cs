@@ -8,6 +8,7 @@ using SIG_DefesaCivil.API.Data.Models.Ocorrencias;
 using SIG_DefesaCivil.API.Mappers;
 using SIG_DefesaCivil.API.Models;
 using SIG_DefesaCivil.API.Models.Ocorrencia;
+using SIG_DefesaCivil.API.Services.Integration;
 
 namespace SIG_DefesaCivil.API.Services
 {
@@ -16,16 +17,19 @@ namespace SIG_DefesaCivil.API.Services
         private readonly DefesaCivilDbContext _context;
         private readonly EtapaService _etapaService;
         private readonly UserManager<Usuario> _userManager;
+        private readonly GoogleSheetsIntegrationService _sheetsService;
 
         public OcorrenciaService(
             DefesaCivilDbContext context,
             EtapaService etapaService,
-            UserManager<Usuario> userManager
+            UserManager<Usuario> userManager,
+            GoogleSheetsIntegrationService sheetsService
             )
         {
             _context = context;
             _etapaService = etapaService;
             _userManager = userManager;
+            _sheetsService = sheetsService;
         }
 
 
@@ -90,7 +94,8 @@ namespace SIG_DefesaCivil.API.Services
                 }
 
                 // --- 3. Mapeamento e Criação ---
-                var ocorrencia = dto.ToEntity();
+                var ocorrencia = new Ocorrencia();
+                ocorrencia.Campos = dto.ToCamposEntity();
 
                 ocorrencia.Id = Guid.NewGuid().ToString();
                 ocorrencia.Protocolo = novoNumeroProtocolo; // Atribui o número gerado
@@ -107,11 +112,19 @@ namespace SIG_DefesaCivil.API.Services
                 // Confirma a transação
                 await transaction.CommitAsync();
 
+                int? linhaExcel = await _sheetsService.InserirOcorrenciaAsync(ocorrencia);
+                if (linhaExcel == null)
+                {
+                    throw new Exception("Ocorrência registrada no sistema, mas falhou ao sincronizar com o BI da Defesa Civil.");
+                }
+
+                ocorrencia.LinhaExcel = linhaExcel;
+                await _context.SaveChangesAsync();
+
                 return ocorrencia;
             }
             catch (Exception)
             {
-                // Se der erro, desfaz tudo
                 await transaction.RollbackAsync();
                 throw;
             }
@@ -122,11 +135,19 @@ namespace SIG_DefesaCivil.API.Services
             var ocorrencia = await RecuperaOcorrenciaCompletoPorId(id);
             VerificaSeUsuarioPossuiPermissao(ocorrencia.ResponsavelId, usuario);
 
-            ocorrencia = dto.ToEntity();
+            ocorrencia.Campos = dto.ToCamposEntity();
             ocorrencia.Id = id;
 
             var acao = "Editou ocorrencia";
             AdicionaOuAtualizaHistorico(ocorrencia.Id, usuario.Id, acao);
+
+            int? linhaExcel = await _sheetsService.AtualizarOcorrenciaAsync(ocorrencia);
+            if (linhaExcel == null)
+            {
+                throw new Exception("Ocorrência registrada no sistema, mas falhou ao sincronizar com o BI da Defesa Civil.");
+            }
+
+            ocorrencia.LinhaExcel = linhaExcel;
             await _context.SaveChangesAsync();
         }
 
